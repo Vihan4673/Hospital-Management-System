@@ -1,6 +1,6 @@
 import React, { useState, type JSX } from "react"
 import { MdDashboard, MdPeople, MdLocalHospital } from "react-icons/md"
-import { CalendarCheck, Clock } from "lucide-react"
+import { CalendarCheck, CalendarDays } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 
 interface SidebarItem {
@@ -19,6 +19,7 @@ const Sidebar: React.FC = () => {
     else navigate(`/dashboard/${itemId}`)
   }
 
+  // Channelling System එකකට අදාළව items ටික සකස් කරා
   const sidebarItems: SidebarItem[] = [
     {
       id: "dashboard",
@@ -26,63 +27,59 @@ const Sidebar: React.FC = () => {
       icon: <MdDashboard className='w-5 h-5' />,
     },
     {
-      id: "patients", // ✅ Changed from 'readers' -> 'patients'
+      id: "patients", // readers -> patients
       label: "Patients",
       icon: <MdPeople className='w-5 h-5' />,
     },
     {
-      id: "doctors", // ✅ Changed from 'books' -> 'doctors'
-      label: "Doctors",
+      id: "doctors", // books -> doctors
+      label: "doctors",
       icon: <MdLocalHospital className='w-5 h-5' />,
     },
     {
-      id: "appointments", // ✅ Changed from 'lendings' -> 'appointments'
+      id: "appointments", // lendings -> appointments (Active Queue)
       label: "Appointments",
       icon: <CalendarCheck className="w-5 h-5" />,
     },
     {
-      id: "schedules", // ✅ Changed from 'overdues' -> 'schedules' / Pending sessions
-      label: "Clinic Schedules",
-      icon: <Clock className='w-5 h-5' />,
+      id: "schedules", // overdues -> schedules (දොස්තරලාගේ වැඩ කරන වේලාවන්)
+      label: "DoctorModel Schedules",
+      icon: <CalendarDays className='w-5 h-5' />,
     },
   ]
 
   return (
-      <div className='bg-slate-900 text-white w-64 min-h-screen p-4 flex flex-col shadow-xl border-r border-slate-800'>
-        {/* Hospital System Brand Header */}
-        <div className='mb-6 border-b border-slate-800 pb-5'>
-          <h1 className='text-xl font-black text-center tracking-wider text-teal-400'>
-            CAREFLOW <span className="text-white font-light text-sm block tracking-normal mt-0.5">Hospital Management</span>
+      <div className='bg-slate-900 text-slate-100 w-64 min-h-screen p-4 border-r border-slate-800 shadow-xl'>
+        <div className='mb-8 border-b border-slate-800 pb-4'>
+          {/* Channelling Panel Header */}
+          <h1 className='text-xl font-black tracking-wider text-center text-blue-400 uppercase'>
+            ⚕️ CHANNELLING
           </h1>
         </div>
 
-        {/* Navigation Links */}
-        <nav className="flex-1">
-          <ul className='space-y-1.5'>
+        <nav>
+          <ul className='space-y-2'>
             {sidebarItems.map((item) => (
                 <li key={item.id}>
                   <button
                       onClick={() => handleItemClick(item.id)}
-                      className={`w-full flex items-center space-x-3.5 px-4 py-3 rounded-xl transition-all duration-200 text-left ${
+                      className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 text-left group ${
                           activeItem === item.id
-                              ? "bg-teal-600 text-white font-semibold shadow-md shadow-teal-600/20"
-                              : "text-slate-400 hover:bg-slate-800 hover:text-white"
+                              ? "bg-blue-600 text-white shadow-md shadow-blue-900/30 font-semibold"
+                              : "text-slate-400 hover:bg-slate-800 hover:text-slate-100"
                       }`}
                   >
-                <span className={`flex-shrink-0 ${activeItem === item.id ? "text-white" : "text-slate-400"}`}>
+                <span className={`flex-shrink-0 transition-transform group-hover:scale-110 ${
+                    activeItem === item.id ? "text-white" : "text-slate-400 group-hover:text-blue-400"
+                }`}>
                   {item.icon}
                 </span>
-                    <span className='text-sm tracking-wide'>{item.label}</span>
+                    <span className='text-sm font-medium'>{item.label}</span>
                   </button>
                 </li>
             ))}
           </ul>
         </nav>
-
-        {/* Optional: Footer or User Profile summary section */}
-        <div className="pt-4 border-t border-slate-800 text-center text-xs text-slate-500">
-          <p>© 2026 CareFlow Central</p>
-        </div>
       </div>
   )
 }

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-import { LendingModel } from "../models/lending";
+import { LendingModel } from "../models/Appointment";
 import { APIError } from "../errors/APIError";
-import { Reader } from "../models/Reader";
+import { Patient } from "../models/Patient";
 
 export const getOverdueReaders = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -26,7 +26,7 @@ export const getOverdueReaders = async (req: Request, res: Response, next: NextF
 
     overdueLendings.forEach((lending) => {
 
-     const reader = lending.reader as Reader; // castig
+     const reader = lending.reader as Patient; // castig
     const readerId = reader.readerId; // 
 
       if (!overdueByReader[readerId]) {

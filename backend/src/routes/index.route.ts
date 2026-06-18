@@ -1,8 +1,8 @@
 import { Router } from "express";
-import readerRouter from "./reader.routes";
+import readerRouter from "./PatientRoutes";
 import authRouter from "./auth.route";
-import bookRouter from "./book.routes";
-import lendingRouter from "./lending.route";
+import bookRouter from "./Doctorroutes";
+import lendingRouter from "./AppointmentRoute";
 import overdueRouter from "./overdue.route";
 import notifyRouter from "./notification.route";
 

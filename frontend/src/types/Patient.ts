@@ -1,11 +1,12 @@
-export type Reader =  {
-    _id: string,
-    readerId: string;
+export type Patient = {
+    _id?: string;
+    patientId: string;
     name: string;
     email: string;
     phone: string;
     address: string;
-    isActive: boolean;
+    age: number;
+    gender: string;
     createdAt: string;
     updatedAt: string;
-  }
+};

@@ -3,12 +3,12 @@ import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { showConfirmation } from "../components/ConfirmationToast";
 import type { Doctor } from "../types/Doctor.ts";
-import type { Reader } from "../types/Reader";
+import type { Patient } from "../types/Patient.ts";
 import { getOverDues, notifyOverdue } from "../services/overdueService";
 import { Clock } from "lucide-react";
 
 interface OverdueEntry {
-  reader: Reader;
+  reader: Patient;
   overdueBooks: {
     book: Doctor;
     lentDate: string;
@@ -16,7 +16,7 @@ interface OverdueEntry {
   }[];
 }
 
-const PendingAppointmentsPage: React.FC = () => {
+const OverduePage: React.FC = () => {
   const [overdues, setOverdues] = useState<OverdueEntry[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -109,4 +109,4 @@ const PendingAppointmentsPage: React.FC = () => {
   );
 };
 
-export default PendingAppointmentsPage;
+export default OverduePage;

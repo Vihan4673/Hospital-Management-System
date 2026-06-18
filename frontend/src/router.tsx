@@ -4,10 +4,10 @@ import Loginpage from "./pages/Loginpage";
 import SignupPage from "./pages/SignupPage";
 import AdminRoutes from "./pages/AdminRoutes";
 import Dashboard from "./pages/Dashboard";
-import Readerpage from "./pages/PatientsPage.tsx";
-import BooksPage from "./pages/DoctorPage.tsx";
+import PatientPage from "./pages/PatientPage.tsx";
+import DoctorPage from "./pages/DoctorPage.tsx";
 import AppointmentPage from "./pages/AppointmentPage.tsx";
-import PendingAppointmentsPage from "./pages/PendingAppointmentsPage.tsx";
+import OverduePage from "./pages/OverduePage";
 import UserProfile from "./pages/UserProfilePage";
 
 const router = createBrowserRouter([
@@ -22,18 +22,18 @@ const router = createBrowserRouter([
           element: <AdminRoutes/>,
           children: [
             { path: "/dashboard", element: <Dashboard /> },
-            { path: "/dashboard/readers", element: <Readerpage /> },
-            { path: "/dashboard/books", element: <BooksPage /> },
-            { path: "/dashboard/lendings", element: <AppointmentPage /> },
-            { path: "/dashboard/overdues", element: <PendingAppointmentsPage /> },
+            { path: "/dashboard/patients", element: <PatientPage /> },
+            { path: "/dashboard/doctors", element: <DoctorPage /> },
+            { path: "/dashboard/Appointments", element: <AppointmentPage /> },
+            { path: "/dashboard/overdues", element: <OverduePage /> },
             { path: "/dashboard/profile", element: <UserProfile/> },
 
-           
+
           ],
         },
       ],
     },
   ])
-  
+
 
   export default router
