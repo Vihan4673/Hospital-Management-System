@@ -8,7 +8,7 @@ import {
   deleteDoctor,
   getAllDoctors,
   updateDoctor,
-} from "../services/doctorService.ts";
+} from "../services/DoctorService.ts";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { useAuth } from "../context/useAuth";
@@ -66,7 +66,7 @@ const DoctorsPage = () => {
     if (window.confirm("Are you sure you want to delete this doctor profile?")) {
       try {
         await deleteDoctor(id);
-        toast.success("Doctor profile removed successfully");
+        toast.success("DoctorModel profile removed successfully");
         fetchAllDoctors();
       } catch (error) {
         if (axios.isAxiosError(error)) {
@@ -96,7 +96,7 @@ const DoctorsPage = () => {
                   doc.doctorId === activeId || doc._id === activeId ? updatedDoctor : doc
               )
           );
-          toast.success("Doctor details updated successfully");
+          toast.success("DoctorModel details updated successfully");
         } catch (error) {
           if (axios.isAxiosError(error)) {
             toast.error(error.message);
@@ -109,7 +109,7 @@ const DoctorsPage = () => {
         try {
           const newDoctor = await addDoctor(doctorData);
           setDoctors((prev) => [...prev, newDoctor]);
-          toast.success("Doctor registered successfully");
+          toast.success("DoctorModel registered successfully");
         } catch (error) {
           if (axios.isAxiosError(error)) {
             const errorMsg = error.response?.data?.message || error.message;
@@ -132,7 +132,7 @@ const DoctorsPage = () => {
           DOCTORS REGISTRY
         </h1>
 
-        {/* Search bar and button to Add Doctor */}
+        {/* Search bar and button to Add DoctorModel */}
         <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-end mb-4 gap-4">
           <div className="flex-1">
             <label htmlFor="search" className="text-slate-700 font-medium mb-1 text-sm block">

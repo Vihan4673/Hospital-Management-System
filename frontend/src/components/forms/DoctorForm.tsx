@@ -12,24 +12,31 @@ interface DoctorFormProps {
 interface DoctorFormData {
   doctorId: string;
   name: string;
-  specialization: string;
-  phone: string;
   email: string;
-  consultationFee: number;
+  phone: string;
+  specialty: string;
+  channellingPrice: number | string;
   availableDays: string[];
 }
 
 interface DoctorFormErrors {
-  doctorId?: string;
   name?: string;
-  specialization?: string;
-  phone?: string;
   email?: string;
-  consultationFee?: string;
+  phone?: string;
+  specialty?: string;
+  channellingPrice?: string;
   availableDays?: string;
 }
 
-const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const DAYS_OF_WEEK = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
 
 const DoctorForm: React.FC<DoctorFormProps> = ({
                                                  doctor,
@@ -41,10 +48,10 @@ const DoctorForm: React.FC<DoctorFormProps> = ({
   const [formData, setFormData] = React.useState<DoctorFormData>({
     doctorId: doctor?.doctorId || "",
     name: doctor?.name || "",
-    specialization: doctor?.specialization || "",
-    phone: doctor?.phone || "",
     email: doctor?.email || "",
-    consultationFee: doctor?.consultationFee ?? 0,
+    phone: doctor?.phone || "",
+    specialty: doctor?.specialty || "",
+    channellingPrice: doctor?.channellingPrice || "",
     availableDays: doctor?.availableDays || [],
   });
 
@@ -53,30 +60,28 @@ const DoctorForm: React.FC<DoctorFormProps> = ({
   const validateForm = (): boolean => {
     const newErrors: DoctorFormErrors = {};
 
-    if (!formData.doctorId.trim()) newErrors.doctorId = "Doctor ID is required";
     if (!formData.name.trim()) newErrors.name = "Doctor name is required";
-    if (!formData.specialization.trim()) newErrors.specialization = "Specialization is required";
 
-    // Phone validation (Basic 10 digit validation)
-    if (!formData.phone.trim()) {
-      newErrors.phone = "Phone number is required";
-    } else if (!/^\d{10}$/.test(formData.phone.trim())) {
-      newErrors.phone = "Enter a valid 10-digit phone number";
-    }
-
-    // Email validation
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = "Enter a valid email address";
+      newErrors.email = "Please enter a valid email address";
     }
 
-    if (formData.consultationFee <= 0) {
-      newErrors.consultationFee = "Consultation fee must be greater than 0";
+    if (!formData.phone.trim()) {
+      newErrors.phone = "Phone number is required";
+    } else if (!/^\+?[0-9]{9,12}$/.test(formData.phone.trim())) {
+      newErrors.phone = "Enter a valid phone number";
+    }
+
+    if (!formData.specialty.trim()) newErrors.specialty = "Specialty is required";
+
+    if (formData.channellingPrice === "" || Number(formData.channellingPrice) <= 0) {
+      newErrors.channellingPrice = "Please enter a valid channelling price";
     }
 
     if (formData.availableDays.length === 0) {
-      newErrors.availableDays = "Select at least one available day";
+      newErrors.availableDays = "Please select at least one available day";
     }
 
     setErrors(newErrors);
@@ -84,179 +89,176 @@ const DoctorForm: React.FC<DoctorFormProps> = ({
   };
 
   const handleChange = (
-      e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+      e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const { name, value } = e.target;
 
     setFormData((prev) => ({
       ...prev,
-      [name]: name === "consultationFee" ? Number(value) : value,
+      [name]: name === "channellingPrice" ? (value === "" ? "" : Number(value)) : value,
     }));
   };
 
-  const handleDayChange = (day: string) => {
+  const handleDayToggle = (day: string) => {
     setFormData((prev) => {
       const isAlreadySelected = prev.availableDays.includes(day);
       const updatedDays = isAlreadySelected
           ? prev.availableDays.filter((d) => d !== day)
           : [...prev.availableDays, day];
 
-      return { ...prev, availableDays: updatedDays };
+      return {
+        ...prev,
+        availableDays: updatedDays,
+      };
     });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
-      onSave(formData);
+      onSave({
+        ...formData,
+        channellingPrice: Number(formData.channellingPrice),
+      });
     }
   };
 
   return (
-      <div className="bg-white p-8 rounded-xl shadow-xl w-full max-w-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-3">
-          <h2 className="text-2xl font-bold text-center w-full text-teal-800 tracking-wide">
-            {isEditing ? "🏥 EDIT DOCTOR PROFILE" : "🏥 REGISTER NEW DOCTOR"}
+      <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-center w-full text-blue-800">
+            {isEditing ? "EDIT DOCTOR DETAILS" : "ADD NEW DOCTOR"}
           </h2>
-          <button onClick={onClose} className="hover:bg-rose-50 rounded-full p-1.5 transition-colors group">
-            <svg xmlns="http://www.w3.org/2000/svg" height="22px" viewBox="0 -960 960 960" width="22px" className="fill-slate-500 group-hover:fill-rose-600">
+          <button type="button" onClick={onClose} className="hover:bg-gray-100 rounded-full p-1.5 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor" className="text-gray-500">
               <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z" />
             </svg>
           </button>
         </div>
 
-        <form className="text-sm text-slate-700" onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <form className="text-sm text-gray-700" onSubmit={handleSubmit}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-            {/* Doctor ID */}
-            <div>
-              <label className="block mb-1.5 font-medium text-slate-600">Doctor ID / Reg No</label>
-              <input
-                  type="text"
-                  name="doctorId"
-                  className="bg-slate-50 border border-slate-200 p-2.5 rounded-lg w-full focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition"
-                  placeholder="Ex: DOC1042"
-                  value={formData.doctorId}
-                  onChange={handleChange}
-                  disabled={isEditing} // ID usually cannot be changed while editing
-              />
-              {errors.doctorId && <p className="text-red-500 text-xs mt-1 pl-1">{errors.doctorId}</p>}
-            </div>
+            {isEditing && (
+                <div className="sm:col-span-2">
+                  <label className="block mb-1 font-medium">Doctor ID</label>
+                  <input
+                      type="text"
+                      name="doctorId"
+                      disabled={true}
+                      className="border p-2 rounded-lg w-full bg-slate-100 disabled:opacity-70 text-slate-500 outline-none transition cursor-not-allowed"
+                      value={formData.doctorId}
+                      readOnly
+                  />
+                </div>
+            )}
 
-            {/* Full Name */}
             <div>
-              <label className="block mb-1.5 font-medium text-slate-600">Doctor Name</label>
+              <label className="block mb-1 font-medium">Full Name</label>
               <input
                   type="text"
                   name="name"
-                  className="bg-slate-50 border border-slate-200 p-2.5 rounded-lg w-full focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition"
+                  className="border p-2 rounded-lg w-full bg-slate-50 focus:border-blue-500 outline-none transition"
                   placeholder="Ex: Dr. John Doe"
                   value={formData.name}
                   onChange={handleChange}
               />
-              {errors.name && <p className="text-red-500 text-xs mt-1 pl-1">{errors.name}</p>}
+              {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
             </div>
 
-            {/* Specialization */}
             <div>
-              <label className="block mb-1.5 font-medium text-slate-600">Specialization</label>
+              <label className="block mb-1 font-medium">Email Address</label>
               <input
-                  type="text"
-                  name="specialization"
-                  className="bg-slate-50 border border-slate-200 p-2.5 rounded-lg w-full focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition"
-                  placeholder="Ex: Cardiologist, Pediatrician"
-                  value={formData.specialization}
+                  type="email"
+                  name="email"
+                  className="border p-2 rounded-lg w-full bg-slate-50 focus:border-blue-500 outline-none transition"
+                  placeholder="johndoe@hospital.com"
+                  value={formData.email}
                   onChange={handleChange}
               />
-              {errors.specialization && <p className="text-red-500 text-xs mt-1 pl-1">{errors.specialization}</p>}
+              {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
             </div>
 
-            {/* Phone */}
             <div>
-              <label className="block mb-1.5 font-medium text-slate-600">Contact Number</label>
+              <label className="block mb-1 font-medium">Phone Number</label>
               <input
                   type="text"
                   name="phone"
-                  className="bg-slate-50 border border-slate-200 p-2.5 rounded-lg w-full focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition"
+                  className="border p-2 rounded-lg w-full bg-slate-50 focus:border-blue-500 outline-none transition"
                   placeholder="Ex: 0771234567"
                   value={formData.phone}
                   onChange={handleChange}
               />
-              {errors.phone && <p className="text-red-500 text-xs mt-1 pl-1">{errors.phone}</p>}
+              {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
             </div>
 
-            {/* Email */}
             <div>
-              <label className="block mb-1.5 font-medium text-slate-600">Email Address</label>
+              <label className="block mb-1 font-medium">Specialty</label>
               <input
-                  type="email"
-                  name="email"
-                  className="bg-slate-50 border border-slate-200 p-2.5 rounded-lg w-full focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition"
-                  placeholder="Ex: doctor@hospital.com"
-                  value={formData.email}
+                  type="text"
+                  name="specialty"
+                  className="border p-2 rounded-lg w-full bg-slate-50 focus:border-blue-500 outline-none transition"
+                  placeholder="Ex: Cardiologist / Pediatrician"
+                  value={formData.specialty}
                   onChange={handleChange}
               />
-              {errors.email && <p className="text-red-500 text-xs mt-1 pl-1">{errors.email}</p>}
+              {errors.specialty && <p className="text-red-500 text-xs mt-1">{errors.specialty}</p>}
             </div>
 
-            {/* Consultation Fee */}
             <div>
-              <label className="block mb-1.5 font-medium text-slate-600">Consultation Fee (LKR)</label>
+              <label className="block mb-1 font-medium">Channelling Fee (LKR)</label>
               <input
                   type="number"
-                  name="consultationFee"
-                  className="bg-slate-50 border border-slate-200 p-2.5 rounded-lg w-full focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition"
+                  name="channellingPrice"
+                  min="0"
+                  className="border p-2 rounded-lg w-full bg-slate-50 focus:border-blue-500 outline-none transition"
                   placeholder="Ex: 2500"
-                  value={formData.consultationFee || ""}
-                  min={0}
+                  value={formData.channellingPrice}
                   onChange={handleChange}
               />
-              {errors.consultationFee && (
-                  <p className="text-red-500 text-xs mt-1 pl-1">{errors.consultationFee}</p>
-              )}
+              {errors.channellingPrice && <p className="text-red-500 text-xs mt-1">{errors.channellingPrice}</p>}
             </div>
 
-            {/* Available Days Checkboxes (Full width span) */}
-            <div className="sm:col-span-2">
-              <label className="block mb-2 font-medium text-slate-600">Available Days</label>
-              <div className="flex flex-wrap gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
+            <div className="sm:col-span-2 mt-2 bg-slate-50 p-4 rounded-lg border">
+              <label className="block mb-2 font-semibold text-blue-800">Available Days for Channelling</label>
+              <div className="flex flex-wrap gap-2">
                 {DAYS_OF_WEEK.map((day) => {
                   const isChecked = formData.availableDays.includes(day);
                   return (
-                      <label
+                      <button
                           key={day}
-                          className={`flex items-center gap-2 px-3 py-1.5 rounded-md border text-xs font-medium cursor-pointer transition-all ${
+                          type="button"
+                          onClick={() => handleDayToggle(day)}
+                          className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-all cursor-pointer ${
                               isChecked
-                                  ? "bg-teal-50 border-teal-300 text-teal-700 shadow-sm"
-                                  : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"
+                                  ? "bg-blue-600 border-blue-600 text-white shadow-sm"
+                                  : "bg-white border-gray-300 text-gray-700 hover:bg-gray-100"
                           }`}
                       >
-                        <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={() => handleDayChange(day)}
-                            className="hidden"
-                        />
-                        <span>{isChecked ? "✓" : "+"}</span>
                         {day}
-                      </label>
+                      </button>
                   );
                 })}
               </div>
-              {errors.availableDays && (
-                  <p className="text-red-500 text-xs mt-1.5 pl-1">{errors.availableDays}</p>
-              )}
+              {errors.availableDays && <p className="text-red-500 text-xs mt-2">{errors.availableDays}</p>}
             </div>
+
           </div>
 
-          {/* Action Button */}
-          <div className="flex justify-end mt-6 pt-4 border-t border-slate-100">
+          <div className="flex justify-end gap-3 mt-6">
+            <button
+                type="button"
+                onClick={onClose}
+                className="px-5 py-2 rounded-full border border-gray-300 font-medium text-gray-700 hover:bg-gray-50 transition"
+            >
+              Cancel
+            </button>
             <button
                 type="submit"
-                className="bg-teal-600 hover:bg-teal-700 active:scale-95 text-white font-medium px-6 py-2.5 rounded-lg transition-all shadow-sm disabled:opacity-70"
+                className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-full font-medium shadow-sm transition active:scale-98 disabled:opacity-70"
                 disabled={isSaving}
             >
-              {isSaving ? "Saving Profiles..." : "Save Profile"}
+              {isSaving ? "Saving..." : "Save Details"}
             </button>
           </div>
         </form>
