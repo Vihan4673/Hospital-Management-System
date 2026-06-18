@@ -1,143 +1,99 @@
 import React, { useEffect, useState } from 'react';
-import { getAllDoctors } from '../services/doctorService.ts';
-import { getAllReaders as getAllPatients } from '../services/readerService'; // Renamed service alias
-import { getActiveLendings as getActiveAppointments } from '../services/lendingService'; // Renamed service alias
+import { getAllDoctors } from '../services/DoctorService.ts';
+import { getAllPatients } from '../services/PatientService.ts'; // getAllReaders -> getAllPatients
+import { getActiveAppointments } from '../services/AppointmentService.ts'; // getActiveLendings -> getActiveAppointments
 import type { Doctor } from "../types/Doctor.ts";
-import type { Reader as Patient } from "../types/Reader";
-
-// Extended/Mapped Local Type to keep backend data structure safe but semantics medical
-interface Appointment {
-  _id?: string;
-  patient?: Patient | { name: string }; // maps to reader
-  doctor?: Doctor | { name: string; title?: string }; // maps to book
-  appointmentDate: string; // maps to lentDate
-  scheduledTime?: string;
-  status: 'CheckedIn' | 'Discharged' | 'Pending'; // maps to returned logic
-  // Fallbacks for library backend properties if needed:
-  lentDate?: string;
-  dueDate?: string;
-  returned?: boolean;
-  reader?: Patient;
-  book?: Doctor & { title?: string };
-}
+import type { Patient } from "../types/Patient.ts";
+import type { Appointment } from "../types/Appointment.ts";
 
 const Dashboard = () => {
-  // Converted state names completely to medical context
+  // States hospital domain එකට ගැලපෙන ලෙස මාරු කරා
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [admissionsToday, setAdmissionsToday] = useState<Appointment[]>([]);
-  const [dischargedToday, setDischargedToday] = useState<Appointment[]>([]);
+  const [todayAppointments, setTodayAppointments] = useState<Appointment[]>([]);
+  const [completedToday, setCompletedToday] = useState<Appointment[]>([]);
   const [pendingAppointments, setPendingAppointments] = useState<Appointment[]>([]);
 
   useEffect(() => {
-    const fetchHospitalData = async () => {
+    const fetchData = async () => {
       try {
         const doctorData = await getAllDoctors();
         const patientData = await getAllPatients();
-        const rawAppointmentData = await getActiveAppointments();
+        const appointmentData = await getActiveAppointments();
 
         setDoctors(doctorData);
         setPatients(patientData);
-
-        // Normalize any mixed backend properties safely
-        const normalizedAppointments: Appointment[] = rawAppointmentData.map((item: any) => ({
-          ...item,
-          appointmentDate: item.appointmentDate || item.lentDate,
-          scheduledTime: item.scheduledTime || item.dueDate
-        }));
-
-        setAppointments(normalizedAppointments);
+        setAppointments(appointmentData);
 
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        // 1. Filter Check-ins / Admissions Today
-        const todayCheckedIn = normalizedAppointments.filter(app => {
-          const checkInDate = new Date(app.appointmentDate || app.lentDate || '');
-          return checkInDate.getTime() >= today.getTime();
-        });
-        setAdmissionsToday(todayCheckedIn);
+        // අද දිනට නියමිත ඇපොයින්ට්මන්ට් (Appointments scheduled for today)
+        const todayApp = appointmentData.filter(a => new Date(a.appointmentDate).getTime() >= today.getTime());
+        setTodayAppointments(todayApp);
 
-        // 2. Filter Discharged Today
-        const todayDischarged = normalizedAppointments.filter(app => app.returned || app.status === 'Discharged');
-        setDischargedToday(todayDischarged);
+        // අද දින අවසන් කරන ලද ඇපොයින්ට්මන්ට් (Completed today)
+        const todayDone = appointmentData.filter(a => a.isCompleted || a.status === 'completed');
+        setCompletedToday(todayDone);
 
-        // 3. Filter Pending / Overdue Appointments
-        const pending = normalizedAppointments.filter(app => {
-          const isNotCleared = !app.returned && app.status !== 'Discharged';
-          const targetTime = new Date(app.scheduledTime || app.dueDate || '').getTime();
-          return isNotCleared && targetTime < new Date().getTime();
-        });
+        // තවමත් නොපැමිණි / පොරොත්තු ලේඛනයේ ඇති ඇපොයින්ට්මන්ට් (Pending / Waiting)
+        const pending = appointmentData.filter(a => !a.isCompleted && a.status !== 'completed');
         setPendingAppointments(pending);
-
       } catch (error) {
-        console.error("Error updating live dashboard states:", error);
+        console.error("Dashboard data fetching error:", error);
       }
     };
 
-    fetchHospitalData();
-    const liveInterval = setInterval(fetchHospitalData, 5000); // 5s live refresh
-    return () => clearInterval(liveInterval);
+    fetchData();
+    const interval = setInterval(fetchData, 5000); // සෑම තත්පර 5කට වරක් auto-refresh වේ
+    return () => clearInterval(interval);
   }, []);
 
   return (
-      <div className="p-2 bg-slate-50/30 min-h-full">
-        {/* Title with Hospital Aesthetics */}
-        <div className="mb-6 bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-              <span className="text-teal-600 animate-pulse">🏥</span> Clinical Live Dashboard
-            </h1>
-            <p className="text-sm text-slate-500 mt-1">
-              Real-time monitoring of clinical stats, patient admissions, and scheduled consultants.
-            </p>
-          </div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-teal-700 bg-teal-50 px-3 py-1.5 rounded-full border border-teal-100 self-start sm:self-auto">
-            <span className="w-2 h-2 rounded-full bg-teal-500 animate-ping"></span>
-            LIVE MONITORING ACTIVE
-          </div>
-        </div>
+      <div className="p-6 bg-slate-50 min-h-screen text-slate-800">
+        <h1 className="text-2xl font-bold mb-6 text-blue-900 flex items-center gap-2">
+          📊 Medicare Live Dashboard
+        </h1>
 
-        {/* Grid converted into Medical Stat Cards */}
+        {/* Hospital Statistics Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <StatCard title="👨‍⚕️ Available Doctors" value={doctors.length} color="border-l-4 border-teal-500 bg-white" textColor="text-teal-700" />
-          <StatCard title="👥 Registered Patients" value={patients.length} color="border-l-4 border-blue-500 bg-white" textColor="text-blue-700" />
-          <StatCard title="📅 Admissions Today" value={admissionsToday.length} color="border-l-4 border-amber-500 bg-white" textColor="text-amber-700" />
-          <StatCard title="⚠️ Pending / Delayed" value={pendingAppointments.length} color="border-l-4 border-rose-500 bg-white" textColor="text-rose-700" />
-          <StatCard title="✅ Discharged Today" value={dischargedToday.length} color="border-l-4 border-emerald-500 bg-white" textColor="text-emerald-700" />
-          <StatCard title="📋 Total Consultations" value={appointments.length} color="border-l-4 border-slate-500 bg-white" textColor="text-slate-700" />
+          <StatCard title="👨‍⚕️ Total Doctors" value={doctors.length} color="bg-blue-100 text-blue-950 border border-blue-200" />
+          <StatCard title="👤 Total Patients" value={patients.length} color="bg-emerald-100 text-emerald-950 border border-emerald-200" />
+          <StatCard title="📅 Scheduled Today" value={todayAppointments.length} color="bg-amber-100 text-amber-950 border border-amber-200" />
+          <StatCard title="⏳ Pending Consultations" value={pendingAppointments.length} color="bg-rose-100 text-rose-950 border border-rose-200" />
+          <StatCard title="✅ Completed Today" value={completedToday.length} color="bg-indigo-100 text-indigo-950 border border-indigo-200" />
+          <StatCard title="📦 Total Appointments" value={appointments.length} color="bg-slate-200 text-slate-900 border border-slate-300" />
         </div>
 
-        {/* Activity Log converted into a Clinical Check-In Queue */}
-        <div className="mt-8">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="w-2.5 h-2.5 rounded-full bg-teal-500 animate-pulse"></span>
-            <h2 className="text-xl font-semibold text-slate-800">📌 Live Patient Outpatient (OPD) Admissions Queue</h2>
-          </div>
-
-          <div className="bg-white border border-slate-100 shadow-sm p-5 rounded-xl max-h-80 overflow-y-auto divide-y divide-slate-100">
-            {admissionsToday.length === 0 ? (
-                <p className="text-slate-400 text-sm py-4 text-center">No active patient check-ins recorded for today.</p>
+        {/* Live Activity Log */}
+        <div className="mt-10">
+          <h2 className="text-xl font-semibold mb-4 text-slate-700">📌 Today's Appointment Queue</h2>
+          <div className="bg-white shadow-xs border border-slate-200 p-4 rounded-xl max-h-64 overflow-y-auto">
+            {todayAppointments.length === 0 ? (
+                <p className="text-gray-400 text-center py-4">No appointments scheduled for today.</p>
             ) : (
-                admissionsToday.map((appointment, index) => {
-                  const patientName = appointment.patient?.name || appointment.reader?.name || "Unknown PatientModel";
-                  const doctorName = appointment.doctor?.name || appointment.book?.name || appointment.book?.title || "General Physician";
-                  const recordTime = appointment.appointmentDate || appointment.lentDate || new Date().toISOString();
+                todayAppointments.map((appointment, index) => {
+                  const patientObj = appointment.patient as Patient;
+                  const doctorObj = appointment.doctor as Doctor;
 
                   return (
-                      <div key={index} className="py-3.5 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 hover:bg-slate-50/50 px-2 rounded-lg transition-colors">
+                      <div key={index} className="mb-3 p-3 bg-slate-50 rounded-lg border border-slate-100 flex justify-between items-center">
                         <div>
-                          <p className="text-slate-700 font-medium text-sm">
-                            Patient: <span className="text-slate-900 font-semibold">{patientName}</span>
+                          <p className="font-medium text-slate-800">
+                            Patient: <span className="text-emerald-700">{typeof appointment.patient === 'object' ? patientObj.name : "Unknown"}</span>
                           </p>
-                          <p className="text-xs text-teal-600 font-medium mt-0.5 flex items-center gap-1">
-                            <span>🩺</span> Assigned Specialist: {doctorName}
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            Consulting: <span className="text-blue-600 font-medium">Dr. {typeof appointment.doctor === 'object' ? doctorObj.name : "Unknown"}</span>
                           </p>
                         </div>
-                        <div className="text-left sm:text-right bg-slate-50 sm:bg-transparent p-2 sm:p-0 rounded-md">
-                          <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Admission Timestamp</p>
-                          <p className="text-xs text-slate-600 font-medium mt-0.5">{new Date(recordTime).toLocaleString()}</p>
+                        <div className="text-right">
+                          <p className="text-xs text-gray-500 font-medium">
+                            {appointment.appointmentDate ? new Date(appointment.appointmentDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "N/A"}
+                          </p>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${appointment.isCompleted ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                      {appointment.isCompleted ? 'Completed' : 'Waiting'}
+                    </span>
                         </div>
                       </div>
                   );
@@ -149,21 +105,18 @@ const Dashboard = () => {
   );
 };
 
-// Clean, modern Medical StatCard design
 const StatCard = ({
                     title,
                     value,
-                    color,
-                    textColor
+                    color
                   }: {
   title: string;
   value: number;
   color: string;
-  textColor: string;
 }) => (
-    <div className={`p-6 rounded-xl shadow-sm border border-slate-100/80 transition-all hover:shadow-md hover:-translate-y-0.5 ${color}`}>
-      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{title}</p>
-      <h2 className={`text-3xl font-bold mt-2 ${textColor}`}>{value}</h2>
+    <div className={`p-6 rounded-xl shadow-xs transition-all hover:translate-y-[-2px] ${color}`}>
+      <p className="text-xs font-semibold uppercase tracking-wider opacity-75">{title}</p>
+      <h2 className="text-3xl font-extrabold mt-1">{value}</h2>
     </div>
 );
 
