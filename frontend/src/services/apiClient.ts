@@ -1,7 +1,7 @@
 import axios, { AxiosError } from "axios";
 
 // Backend එක run වෙන්නේ port 5000 එකේ නිසා URL එක 5000 ට වෙනස් කර ඇත.
-const BASE_URL = "http://localhost:5000/api/";
+const BASE_URL = "http://localhost:3000/api/";
 
 const apiClient = axios.create({
     baseURL: BASE_URL,

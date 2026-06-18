@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
-import { LendingModel } from '../models/lending';
+import { LendingModel } from '../models/Appointment';
 import { sendEmail } from '../utils/mailer';
 import { APIError } from '../errors/APIError';
-import { Reader } from '../models/Reader';
-import { Book } from '../models/Book';
+import { Patient } from '../models/Patient';
+import { DoctorModel } from '../models/DoctorModel';
 
 export const notifyOverdueReaders = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -17,8 +17,8 @@ export const notifyOverdueReaders = async (req: Request, res: Response, next: Ne
         const grouped: Record<string, { reader: any; books: any[] }> = {};
 
         overdueLendings.forEach(lending => {
-            const reader = lending.reader as Reader;
-            const book = lending.book as Book;
+            const reader = lending.reader as Patient;
+            const book = lending.book as DoctorModel;
 
             if (!grouped[reader.readerId]) {
                 grouped[reader.readerId] = { reader, books: [] };
@@ -58,7 +58,7 @@ export const notifyOverdueReaders = async (req: Request, res: Response, next: Ne
                     </div>
                 `;
 
-            await sendEmail(reader.email, '📚 Overdue Book Notification', message);
+            await sendEmail(reader.email, '📚 Overdue DoctorModel Notification', message);
         }
 
         res.status(200).json({ message: 'Email notifications sent successfully.' });
@@ -69,7 +69,7 @@ export const notifyOverdueReaders = async (req: Request, res: Response, next: Ne
 
 export const testmail = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await sendEmail('sherul.dhanushka@gmail.com', 'Bookclub', 'This is a test mail from Book Club Library System 📚');
+        await sendEmail('sherul.dhanushka@gmail.com', 'Bookclub', 'This is a test mail from DoctorModel Club Library System 📚');
         res.status(200).json({ message: 'Test email sent successfully!' });
     } catch (error: any) {
         next(new APIError(500, "Failed to send test email", error.message));

@@ -36,7 +36,7 @@ const SignupPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Updated background image variable name placeholder for medical layout
+  // Hospital-themed background image placeholder
   const backgroundImageUrl = "hospital-bg.jpeg";
 
   const togglePasswordVisibility = () => {
@@ -122,79 +122,66 @@ const SignupPage = () => {
   };
 
   return (
-      <div className="login-page">
+      <div className="signup-page">
         <div className="flex min-h-screen w-full">
-          {/* Left Side: Medical Hero Section */}
+          {/* Left Side - Hospital Branding */}
           <div
-              className="hidden md:flex w-4/5 flex-col justify-center items-center bg-teal-950 p-8 text-center relative"
+              className="hidden md:flex w-1/2 flex-col justify-center items-center bg-slate-900 text-center relative p-8"
               style={{
-                backgroundImage: `url(${backgroundImageUrl})`,
+                backgroundImage: `linear-gradient(to bottom, rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.95)), url(${backgroundImageUrl})`,
                 backgroundSize: "cover",
                 backgroundPosition: "center",
               }}
           >
-            {/* Subtle dark overlay for healthcare aesthetics and contrast */}
-            <div className="absolute inset-0 bg-teal-950/40 z-0"></div>
-
-            <div className="relative z-10 flex flex-col justify-center items-center text-white p-8">
-              <h1 className="text-2xl md:text-3xl font-semibold text-teal-100">
+            <div className="relative z-10 flex flex-col justify-center items-center text-white">
+              <h1 className="text-2xl md:text-4xl font-semibold text-blue-400">
                 Welcome to
               </h1>
-              <h2 className="text-3xl md:text-4xl font-bold mt-2 mb-4 text-white drop-shadow-md">
-                MEDICARE CARE HOSPITAL
+              <h2 className="text-3xl md:text-5xl font-bold mt-2 mb-4 tracking-wide text-white">
+                MEDICARE PORTAL
               </h2>
-              <p className="text-sm md:text-base text-teal-50 font-light max-w-md">
-                Your Health, Our Priority. Providing Exceptional Clinical and Digital Care.
+              <p className="text-sm md:text-base text-slate-300 max-w-md">
+                Your Health, Our Priority. Connecting Patients and Healthcare Professionals Seamlessly.
               </p>
             </div>
           </div>
 
-          {/* Right Side: Registration Portal */}
-          <div className="w-full min-h-90 flex flex-col items-center justify-center bg-slate-50">
+          {/* Right Side - Signup Form */}
+          <div className="w-full min-h-screen md:w-1/2 flex flex-col items-center justify-center bg-white">
             <form
                 onSubmit={handleSubmit}
                 className="md:w-96 w-80 flex flex-col items-center justify-center"
             >
-              {/* Swapped library logo with hospital-logo.jpeg */}
-              <img src="hospital-logo.jpeg" alt="Hospital Logo" className="w-16 h-16 object-contain mb-2" />
+              {/* Hospital Logo Placeholder */}
+              <div className="bg-blue-50 p-3 rounded-full mb-2">
+                <svg className="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+              </div>
 
-              <h1 className="text-2xl md:text-2xl font-bold text-teal-800 tracking-wide">
+              <h1 className="text-2xl md:text-3xl font-bold text-blue-800 tracking-tight">
                 CREATE ACCOUNT
               </h1>
 
-              <p className="text-sm text-gray-500/90 mt-2 text-center">
-                Join our healthcare platform to manage your clinical portal
+              <p className="text-sm text-gray-500 mt-2 text-center">
+                Register to schedule appointments and manage health records
               </p>
 
-              {/* Full Name Input Field */}
-              <div className="w-full mt-6">
+              {/* Full Name Field */}
+              <div className="w-full p-2 mt-4">
                 <div
-                    className={`flex items-center w-full bg-white border h-12 rounded-full overflow-hidden pl-6 gap-2 transition-colors duration-300 focus-within:border-teal-500 ${
+                    className={`flex items-center w-full bg-transparent border h-12 rounded-full overflow-hidden pl-6 gap-2 transition-colors duration-300 focus-within:border-blue-600 ${
                         errors.fullName && submitted
                             ? "border-red-500"
                             : isNameFocused
-                                ? "border-teal-500 bg-teal-50/10"
-                                : "border-gray-300/80"
+                                ? "border-blue-600 bg-slate-50/50"
+                                : "border-gray-300"
                     }`}
                 >
-                  <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                        d="M12 12C14.7614 12 17 9.76142 17 7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7C7 9.76142 9.23858 12 12 12Z"
-                        stroke="#14B8A6" // Medical Teal Icon Accent
-                        strokeWidth="2"
-                    />
-                    <path
-                        d="M20.5899 22C20.5899 18.13 16.7399 15 11.9999 15C7.25991 15 3.40991 18.13 3.40991 22"
-                        stroke="#14B8A6" // Medical Teal Icon Accent
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                    />
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 12C14.7614 12 17 9.76142 17 7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7C7 9.76142 9.23858 12 12 12Z" stroke="#6B7280" strokeWidth="2" />
+                    <path d="M20.5899 22C20.5899 18.13 16.7399 15 11.9999 15C7.25991 15 3.40991 18.13 3.40991 22" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" />
                   </svg>
                   <input
                       type="text"
@@ -204,7 +191,7 @@ const SignupPage = () => {
                       onChange={handleChange}
                       onFocus={() => setIsNameFocused(true)}
                       onBlur={() => setIsNameFocused(false)}
-                      className="bg-transparent text-gray-800 placeholder-gray-400 outline-none text-sm w-full h-full"
+                      className="bg-transparent text-black/80 placeholder-gray-400 outline-none text-sm w-full h-full"
                   />
                 </div>
                 {errors.fullName && submitted && (
@@ -214,30 +201,19 @@ const SignupPage = () => {
                 )}
               </div>
 
-              {/* Email Input Field */}
-              <div className="w-full mt-4">
+              {/* Email Field */}
+              <div className="w-full p-2">
                 <div
-                    className={`flex items-center w-full bg-white border h-12 rounded-full overflow-hidden pl-6 gap-2 transition-colors duration-300 focus-within:border-teal-500 ${
+                    className={`flex items-center w-full bg-transparent border h-12 rounded-full overflow-hidden pl-6 gap-2 transition-colors duration-300 focus-within:border-blue-600 ${
                         errors.email && submitted
                             ? "border-red-500"
                             : isEmailFocused
-                                ? "border-teal-500 bg-teal-50/10"
-                                : "border-gray-300/80"
+                                ? "border-blue-600 bg-slate-50/50"
+                                : "border-gray-300"
                     }`}
                 >
-                  <svg
-                      width="16"
-                      height="11"
-                      viewBox="0 0 16 11"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                        fillRule="evenodd"
-                        clipRule="evenodd"
-                        d="M0 .55.571 0H15.43l.57.55v9.9l-.571.55H.57L0 10.45zm1.143 1.138V9.9h13.714V1.69l-6.503 4.8h-.697zM13.749 1.1H2.25L8 5.356z"
-                        fill="#14B8A6" // Medical Teal Icon Accent
-                    />
+                  <svg width="16" height="11" viewBox="0 0 16 11" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path fillRule="evenodd" clipRule="evenodd" d="M0 .55.571 0H15.43l.57.55v9.9l-.571.55H.57L0 10.45zm1.143 1.138V9.9h13.714V1.69l-6.503 4.8h-.697zM13.749 1.1H2.25L8 5.356z" fill="#6B7280" />
                   </svg>
                   <input
                       type="email"
@@ -247,7 +223,7 @@ const SignupPage = () => {
                       onChange={handleChange}
                       onFocus={() => setIsEmailFocused(true)}
                       onBlur={() => setIsEmailFocused(false)}
-                      className="bg-transparent text-gray-800 placeholder-gray-400 outline-none text-sm w-full h-full"
+                      className="bg-transparent text-black/80 placeholder-gray-400 outline-none text-sm w-full h-full"
                   />
                 </div>
                 {errors.email && submitted && (
@@ -257,80 +233,47 @@ const SignupPage = () => {
                 )}
               </div>
 
-              {/* Password Input Field */}
-              <div className="w-full mt-4">
+              {/* Password Field */}
+              <div className="w-full p-2">
                 <div
-                    className={`flex items-center w-full bg-white border h-12 rounded-full overflow-hidden pl-6 gap-2 transition-colors duration-300 focus-within:border-teal-500 ${
+                    className={`flex items-center w-full bg-transparent border h-12 rounded-full overflow-hidden pl-6 gap-2 transition-colors duration-300 focus-within:border-blue-600 ${
                         errors.password && submitted
                             ? "border-red-500"
                             : isPasswordFocused
-                                ? "border-teal-500 bg-teal-50/10"
-                                : "border-gray-300/80"
+                                ? "border-blue-600 bg-slate-50/50"
+                                : "border-gray-300"
                     }`}
                 >
-                  <svg
-                      width="13"
-                      height="17"
-                      viewBox="0 0 13 17"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                        d="M13 8.5c0-.938-.729-1.7-1.625-1.7h-.812V4.25C10.563 1.907 8.74 0 6.5 0S2.438 1.907 2.438 4.25V6.8h-.813C.729 6.8 0 7.562 0 8.5v6.8c0 .938.729 1.7 1.625 1.7h9.75c.896 0 1.625-.762 1.625-1.7zM4.063 4.25c0-1.406 1.093-2.55 2.437-2.55s2.438 1.144 2.438 2.55V6.8H4.061z"
-                        fill="#14B8A6" // Medical Teal Icon Accent
-                    />
+                  <svg width="13" height="17" viewBox="0 0 13 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M13 8.5c0-.938-.729-1.7-1.625-1.7h-.812V4.25C10.563 1.907 8.74 0 6.5 0S2.438 1.907 2.438 4.25V6.8h-.813C.729 6.8 0 7.562 0 8.5v6.8c0 .938.729 1.7 1.625 1.7h9.75c.896 0 1.625-.762 1.625-1.7zM4.063 4.25c0-1.406 1.093-2.55 2.437-2.55s2.438 1.144 2.438 2.55V6.8H4.061z" fill="#6B7280" />
                   </svg>
-
                   <input
                       type={showPassword ? "text" : "password"}
                       name="password"
-                      placeholder="Security Password"
+                      placeholder="Password"
                       value={formData.password}
                       onChange={handleChange}
                       onFocus={() => setIsPasswordFocused(true)}
                       onBlur={() => setIsPasswordFocused(false)}
-                      className="bg-transparent text-gray-800 placeholder-gray-400 outline-none text-sm w-full h-full"
+                      className="bg-transparent text-black/80 placeholder-gray-400 outline-none text-sm w-full h-full"
                   />
-
                   <button
                       type="button"
                       onClick={togglePasswordVisibility}
-                      className="m-3 cursor-pointer"
+                      className="m-3 focus:outline-none"
                   >
                     {!showPassword ? (
-                        <svg
-                            width="20"
-                            height="20"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                              d="M12 5C5 5 1 12 1 12s4 7 11 7 11-7 11-7-4-7-11-7z"
-                              stroke="#6B7280"
-                              strokeWidth="2"
-                          />
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M12 5C5 5 1 12 1 12s4 7 11 7 11-7 11-7-4-7-11-7z" stroke="#6B7280" strokeWidth="2" />
                           <circle cx="12" cy="12" r="3" stroke="#6B7280" strokeWidth="2" />
                         </svg>
                     ) : (
-                        <svg
-                            width="20"
-                            height="20"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                              d="M17.94 17.94C16.14 19.24 14.14 20 12 20 5 20 1 12 1 12c.73-1.31 1.63-2.52 2.66-3.6M22.08 11.08c-.56-1.31-1.33-2.5-2.29-3.52-1.9-1.97-4.29-3.01-6.79-3.01-.73 0-1.45.09-2.16.25M1 1l22 22"
-                              stroke="#6B7280"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                          />
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M17.94 17.94C16.14 19.24 14.14 20 12 20 5 20 1 12 1 12c.73-1.31 1.63-2.52 2.66-3.6M22.08 11.08c-.56-1.31-1.33-2.5-2.29-3.52-1.9-1.97-4.29-3.01-6.79-3.01-.73 0-1.45.09-2.16.25M1 1l22 22" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" />
                         </svg>
                     )}
                   </button>
                 </div>
-
                 {errors.password && submitted && (
                     <div className="text-red-500 text-xs mt-1 pl-6 text-left w-full">
                       {errors.password}
@@ -338,80 +281,47 @@ const SignupPage = () => {
                 )}
               </div>
 
-              {/* Confirm Password Input Field */}
-              <div className="w-full mt-4">
+              {/* Confirm Password Field */}
+              <div className="w-full p-2">
                 <div
-                    className={`flex items-center w-full bg-white border h-12 rounded-full overflow-hidden pl-6 gap-2 transition-colors duration-300 focus-within:border-teal-500 ${
+                    className={`flex items-center w-full bg-transparent border h-12 rounded-full overflow-hidden pl-6 gap-2 transition-colors duration-300 focus-within:border-blue-600 ${
                         errors.confirmPassword && submitted
                             ? "border-red-500"
                             : isConfirmPasswordFocused
-                                ? "border-teal-500 bg-teal-50/10"
-                                : "border-gray-300/80"
+                                ? "border-blue-600 bg-slate-50/50"
+                                : "border-gray-300"
                     }`}
                 >
-                  <svg
-                      width="13"
-                      height="17"
-                      viewBox="0 0 13 17"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                        d="M13 8.5c0-.938-.729-1.7-1.625-1.7h-.812V4.25C10.563 1.907 8.74 0 6.5 0S2.438 1.907 2.438 4.25V6.8h-.813C.729 6.8 0 7.562 0 8.5v6.8c0 .938.729 1.7 1.625 1.7h9.75c.896 0 1.625-.762 1.625-1.7zM4.063 4.25c0-1.406 1.093-2.55(2.437-2.55s2.438 1.144 2.438 2.55V6.8H4.061z"
-                        fill="#14B8A6" // Medical Teal Icon Accent
-                    />
+                  <svg width="13" height="17" viewBox="0 0 13 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M13 8.5c0-.938-.729-1.7-1.625-1.7h-.812V4.25C10.563 1.907 8.74 0 6.5 0S2.438 1.907 2.438 4.25V6.8h-.813C.729 6.8 0 7.562 0 8.5v6.8c0 .938.729 1.7 1.625 1.7h9.75c.896 0 1.625-.762 1.625-1.7zM4.063 4.25c0-1.406 1.093-2.55 2.437-2.55s2.438 1.144 2.438 2.55V6.8H4.061z" fill="#6B7280" />
                   </svg>
-
                   <input
                       type={showConfirmPassword ? "text" : "password"}
                       name="confirmPassword"
-                      placeholder="Confirm Security Password"
+                      placeholder="Confirm Password"
                       value={formData.confirmPassword}
                       onChange={handleChange}
                       onFocus={() => setIsConfirmPasswordFocused(true)}
                       onBlur={() => setIsConfirmPasswordFocused(false)}
-                      className="bg-transparent text-gray-800 placeholder-gray-400 outline-none text-sm w-full h-full"
+                      className="bg-transparent text-black/80 placeholder-gray-400 outline-none text-sm w-full h-full"
                   />
-
                   <button
                       type="button"
                       onClick={toggleConfirmPasswordVisibility}
-                      className="m-3 cursor-pointer"
+                      className="m-3 focus:outline-none"
                   >
                     {!showConfirmPassword ? (
-                        <svg
-                            width="20"
-                            height="20"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                              d="M12 5C5 5 1 12 1 12s4 7 11 7 11-7 11-7-4-7-11-7z"
-                              stroke="#6B7280"
-                              strokeWidth="2"
-                          />
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M12 5C5 5 1 12 1 12s4 7 11 7 11-7 11-7-4-7-11-7z" stroke="#6B7280" strokeWidth="2" />
                           <circle cx="12" cy="12" r="3" stroke="#6B7280" strokeWidth="2" />
                         </svg>
                     ) : (
-                        <svg
-                            width="20"
-                            height="20"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                              d="M17.94 17.94C16.14 19.24 14.14 20 12 20 5 20 1 12 1 12c.73-1.31 1.63-2.52 2.66-3.6M22.08 11.08c-.56-1.31-1.33-2.5-2.29-3.52-1.9-1.97-4.29-3.01-6.79-3.01-.73 0-1.45.09-2.16.25M1 1l22 22"
-                              stroke="#6B7280"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                          />
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M17.94 17.94C16.14 19.24 14.14 20 12 20 5 20 1 12 1 12c.73-1.31 1.63-2.52 2.66-3.6M22.08 11.08c-.56-1.31-1.33-2.5-2.29-3.52-1.9-1.97-4.29-3.01-6.79-3.01-.73 0-1.45.09-2.16.25M1 1l22 22" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" />
                         </svg>
                     )}
                   </button>
                 </div>
-
                 {errors.confirmPassword && submitted && (
                     <div className="text-red-500 text-xs mt-1 pl-6 text-left w-full">
                       {errors.confirmPassword}
@@ -419,28 +329,29 @@ const SignupPage = () => {
                 )}
               </div>
 
-              {/* Submit Button (Hospital Styled Teal Color) */}
+              {/* Submit Button */}
               <button
                   type="submit"
                   disabled={isLoading}
-                  className="mt-8 w-full h-11 rounded-full text-white bg-teal-600 hover:bg-teal-700 font-medium tracking-wide active:scale-95 transition-all disabled:opacity-70 shadow-sm"
+                  className="mt-6 w-full h-11 rounded-full text-white bg-blue-600 hover:bg-blue-700 active:scale-98 transition-all font-medium shadow-sm disabled:opacity-70 disabled:pointer-events-none"
               >
-                {isLoading ? "Creating Portal Account..." : "Register Now"}
+                {isLoading ? "Creating account..." : "Sign Up"}
               </button>
 
               <div className="flex items-center gap-4 w-full my-5">
                 <div className="w-full h-px bg-gray-200"></div>
-                <p className="w-full text-nowrap text-xs text-gray-400 text-center">
-                  or sign up with enterprise
+                <p className="text-nowrap text-xs text-gray-400 uppercase tracking-wider">
+                  or sign up with
                 </p>
                 <div className="w-full h-px bg-gray-200"></div>
               </div>
 
-              {/* OAuth Buttons (Maintained Structure) */}
-              <div className="flex flex-wrap gap-4 mt-1 justify-center">
+              {/* Social / SSO Buttons */}
+              <div className="flex gap-4 justify-center">
                 <button
                     type="button"
-                    className="w-12 h-12 bg-white border border-gray-200 flex items-center justify-center rounded-full hover:shadow-sm"
+                    className="w-12 h-12 bg-gray-100 flex items-center justify-center rounded-full hover:shadow-sm hover:bg-gray-200 transition-colors"
+                    title="Sign up with Google"
                 >
                   <img
                       src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/google/google-original.svg"
@@ -448,22 +359,15 @@ const SignupPage = () => {
                       className="w-5 h-5"
                   />
                 </button>
-
-                <button
-                    type="button"
-                    className="w-12 h-12 bg-white border border-gray-200 flex items-center justify-center rounded-full hover:shadow-sm"
-                >
-                  <img
-                      src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/facebook/facebook-original.svg"
-                      alt="Facebook"
-                      className="w-5 h-5"
-                  />
-                </button>
               </div>
 
-              <p className="text-gray-500/90 text-sm mt-6">
-                Already have a clinical account?
-                <Link to="/login" className="text-teal-600 font-medium hover:underline ml-1">
+              {/* Footer Registration Link */}
+              <p className="text-gray-500 text-sm mt-6">
+                Already have an account?
+                <Link
+                    to="/login"
+                    className="text-blue-600 font-medium hover:underline ml-1"
+                >
                   Sign in
                 </Link>
               </p>

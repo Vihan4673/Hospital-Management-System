@@ -1,5 +1,5 @@
 import express from 'express';
-import { notifyOverdueReaders, testmail } from '../controllers/notifyOverdueReaders.controller';
+import { notifyOverdueReaders, testmail } from '../controllers/notifyp.controller';
 
 const notifyRouter = express.Router();
 
