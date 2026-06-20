@@ -1,11 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from 'react';
 
 const UserProfile = () => {
   const [user, setUser] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
 
-  // Form state for editing
   const [formData, setFormData] = useState({
     name: '',
     lastName: '',

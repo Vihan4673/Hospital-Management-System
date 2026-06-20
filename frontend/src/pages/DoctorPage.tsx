@@ -66,7 +66,7 @@ const DoctorsPage = () => {
     if (window.confirm("Are you sure you want to delete this doctor profile?")) {
       try {
         await deleteDoctor(id);
-        toast.success("DoctorModel profile removed successfully");
+        toast.success("Doctor profile removed successfully");
         fetchAllDoctors();
       } catch (error) {
         if (axios.isAxiosError(error)) {
@@ -84,11 +84,9 @@ const DoctorsPage = () => {
     setIsSaving(true);
 
     setTimeout(async () => {
-      // Determines active key based on whether it is an edit or new record
       const activeId = currentDoctor?._id || currentDoctor?.doctorId;
 
       if (currentDoctor && activeId) {
-        // Update existing doctor profile
         try {
           const updatedDoctor = await updateDoctor(activeId, doctorData);
           setDoctors((prev) =>
@@ -96,7 +94,7 @@ const DoctorsPage = () => {
                   doc.doctorId === activeId || doc._id === activeId ? updatedDoctor : doc
               )
           );
-          toast.success("DoctorModel details updated successfully");
+          toast.success("Doctor details updated successfully");
         } catch (error) {
           if (axios.isAxiosError(error)) {
             toast.error(error.message);
@@ -105,11 +103,10 @@ const DoctorsPage = () => {
           }
         }
       } else {
-        // Add new doctor
         try {
           const newDoctor = await addDoctor(doctorData);
           setDoctors((prev) => [...prev, newDoctor]);
-          toast.success("DoctorModel registered successfully");
+          toast.success("Doctor registered successfully");
         } catch (error) {
           if (axios.isAxiosError(error)) {
             const errorMsg = error.response?.data?.message || error.message;
@@ -132,7 +129,6 @@ const DoctorsPage = () => {
           DOCTORS REGISTRY
         </h1>
 
-        {/* Search bar and button to Add DoctorModel */}
         <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-end mb-4 gap-4">
           <div className="flex-1">
             <label htmlFor="search" className="text-slate-700 font-medium mb-1 text-sm block">
@@ -160,20 +156,19 @@ const DoctorsPage = () => {
 
         <div className="border-b border-slate-200 mb-5"></div>
 
+        {/* FIX: <table> ටැග් එක මෙතනින් ඉවත් කර කෙලින්ම DoctorTable එක ලබා දී ඇත */}
         <div className="h-[calc(100vh-260px)] overflow-y-auto rounded-xl shadow-sm border border-slate-200/60 bg-white">
           {isDoctorLoading ? (
               <div className="flex items-center justify-center h-full text-slate-400 text-sm">
                 Loading system profiles...
               </div>
           ) : (
-              <table className="min-w-full text-sm text-left">
-                <DoctorTable
-                    doctors={doctors}
-                    search={search}
-                    onView={handleViewDoctor}
-                    onDelete={handleDeleteDoctor}
-                />
-              </table>
+              <DoctorTable
+                  doctors={doctors}
+                  search={search}
+                  onView={handleViewDoctor}
+                  onDelete={handleDeleteDoctor}
+              />
           )}
         </div>
 

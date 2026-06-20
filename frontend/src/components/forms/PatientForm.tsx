@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import type { Patient } from "../../types/Patient.ts";
 
 interface PatientFormProps {
@@ -32,6 +32,17 @@ const PatientForm: React.FC<PatientFormProps> = ({
   const [gender, setGender] = React.useState(patient?.gender || "Male");
   const [address, setAddress] = React.useState(patient?.address || "");
   const [errors, setErrors] = React.useState<FormErrors>({});
+
+  // 👈 FIX: වෙනත් පේෂන්ට් කෙනෙක් Edit කරන්න තෝරන විට Form එකේ Inputs වල අගයන් auto update වන කොටස
+  useEffect(() => {
+    setName(patient?.name || "");
+    setEmail(patient?.email || "");
+    setPhone(patient?.phone || "");
+    setAge(patient?.age || "");
+    setGender(patient?.gender || "Male");
+    setAddress(patient?.address || "");
+    setErrors({}); // පරණ Errors තියෙනවා නම් ඒවාත් Clear කරයි
+  }, [patient]);
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -77,14 +88,14 @@ const PatientForm: React.FC<PatientFormProps> = ({
   };
 
   return (
-      <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-2xl text-gray-700">
+      <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-2xl text-gray-700 max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <div className="flex flex-col w-full">
             <h2 className="text-2xl font-bold flex items-center gap-2 justify-center text-teal-800 tracking-wide uppercase">
               {isEditing ? "EDIT PATIENT DETAILS" : "REGISTER NEW PATIENT"}
             </h2>
           </div>
-          <button onClick={onClose} className="hover:bg-gray-100 rounded-full p-1.5 transition-colors">
+          <button type="button" onClick={onClose} className="hover:bg-gray-100 rounded-full p-1.5 transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor" className="text-gray-500">
               <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z" />
             </svg>
@@ -100,7 +111,7 @@ const PatientForm: React.FC<PatientFormProps> = ({
                   <input
                       type="text"
                       className="bg-slate-100 border border-slate-200 p-2 rounded-lg w-full outline-none font-medium text-slate-500 cursor-not-allowed"
-                      value={patient.patientId}
+                      value={patient.patientId || ""}
                       readOnly
                   />
                 </div>

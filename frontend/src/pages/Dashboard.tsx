@@ -7,7 +7,6 @@ import type { Patient } from "../types/Patient.ts";
 import type { Appointment } from "../types/Appointment.ts";
 
 const Dashboard = () => {
-  // States hospital domain එකට ගැලපෙන ලෙස මාරු කරා
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -29,15 +28,10 @@ const Dashboard = () => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        // අද දිනට නියමිත ඇපොයින්ට්මන්ට් (Appointments scheduled for today)
         const todayApp = appointmentData.filter(a => new Date(a.appointmentDate).getTime() >= today.getTime());
         setTodayAppointments(todayApp);
-
-        // අද දින අවසන් කරන ලද ඇපොයින්ට්මන්ට් (Completed today)
         const todayDone = appointmentData.filter(a => a.isCompleted || a.status === 'completed');
         setCompletedToday(todayDone);
-
-        // තවමත් නොපැමිණි / පොරොත්තු ලේඛනයේ ඇති ඇපොයින්ට්මන්ට් (Pending / Waiting)
         const pending = appointmentData.filter(a => !a.isCompleted && a.status !== 'completed');
         setPendingAppointments(pending);
       } catch (error) {

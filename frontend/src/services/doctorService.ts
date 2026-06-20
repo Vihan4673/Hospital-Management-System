@@ -23,7 +23,6 @@ export const addDoctor = async (
 };
 
 // UPDATE DOCTOR BY ID
-// id එක string එකක් ලෙස අනිවාර්ය කර ඇත (undefined ඉවත් කර ඇත) එවිට update එකක් හරියටම සිදුවේ.
 export const updateDoctor = async (
     id: string,
     doctorData: Omit<Doctor, "createdAt" | "updatedAt">

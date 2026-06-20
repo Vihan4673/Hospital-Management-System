@@ -15,8 +15,8 @@ const PatientTable: React.FC<PatientTableProps> = ({
                                                        onDelete
                                                    }) => {
     return (
-        <>
-            <thead className="bg-slate-100 text-slate-800 font-semibold border-b">
+        <table className="min-w-full border-collapse bg-white">
+            <thead className="bg-slate-100 text-slate-800 font-semibold border-b sticky top-0 z-10 shadow-sm">
             <tr>
                 <th className="px-4 py-3 text-center">Patient ID</th>
                 <th className="px-4 py-3 text-center">Name</th>
@@ -28,7 +28,7 @@ const PatientTable: React.FC<PatientTableProps> = ({
             </tr>
             </thead>
 
-            <tbody>
+            <tbody className="divide-y divide-slate-100">
             {patients
                 .filter((patient) => {
                     const term = search.toLowerCase();
@@ -74,7 +74,7 @@ const PatientTable: React.FC<PatientTableProps> = ({
                     );
                 })}
             </tbody>
-        </>
+        </table>
     );
 };
 

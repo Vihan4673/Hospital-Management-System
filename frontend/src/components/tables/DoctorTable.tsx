@@ -15,7 +15,7 @@ const DoctorsTable: React.FC<DoctorsTableProps> = ({
                                                        onDelete,
                                                    }) => {
     return (
-        <>
+        <table className="min-w-full text-sm text-left">
             <thead className="bg-slate-100 text-slate-800 font-semibold border-b">
             <tr>
                 <th className="px-4 py-3 text-center">Doctor ID</th>
@@ -99,7 +99,7 @@ const DoctorsTable: React.FC<DoctorsTableProps> = ({
                     );
                 })}
             </tbody>
-        </>
+        </table>
     );
 };
 
