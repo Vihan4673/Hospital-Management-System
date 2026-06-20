@@ -1,50 +1,61 @@
 import { Request, Response, NextFunction } from "express";
-import { LendingModel } from "../models/Appointment";
+// 1. Appointment මොඩල් එක සාමාන්‍යයෙන් export කරන්නේ AppointmentModel හෝ Appointment කියලා.
+// ඔයාගේ Appointment.ts එකේ තියෙන නිවැරදි නම මෙතනට දාන්න. (මම මෙතනට AppointmentModel කියලා දැම්මා)
+import { AppointmentModel } from "../models/Appointment";
 import { APIError } from "../errors/APIError";
 import { Patient } from "../models/Patient";
 
 export const getOverdueReaders = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const today = new Date();
-    console.log(`today ${today}`)
+    console.log(`today ${today}`);
 
-    const overdueLendings = await LendingModel.find({
+    // 2. මෙතන 'LendingModel' වෙනුවට 'AppointmentModel' (හෝ ඔයාගේ නිවැරදි මොඩල් එක) යොදාගත්තා.
+    // Hospital එකක නම් 'overdue' වෙන්නේ පරණ වෙච්ච, හැබැයි තවම status එක complete නොවෙච්ච appointments වෙන්න ඇති.
+    const overdueAppointments = await AppointmentModel.find({
       dueDate: { $lt: today },
-      returned: false,
+      status: { $ne: "Completed" }, // උදාහරණයක් ලෙස: තවම complete නොවුණු ඒවා (returned වෙනුවට)
     })
-      .populate("book")  // Replace book ID with full book document
-      .populate("reader");
-    
-    console.log(`hi ${overdueLendings}`)
+        .populate("doctor")   // 'book' වෙනුවට Hospital එකකට ගැලපෙන දේ (උදා: doctor හෝ treatment)
+        .populate("patient"); // 'reader' වෙනුවට Hospital එකේ ඉන්නේ patient (රෝගියා)
 
-    if (overdueLendings.length === 0) {
-      return res.status(200).json({ message: "No overdue books found." });
+    console.log(`Overdue appointments count: ${overdueAppointments.length}`);
+
+    if (overdueAppointments.length === 0) {
+      return res.status(200).json({ message: "No overdue appointments found." });
     }
 
-    // Group by reader
-    const overdueByReader: Record<string, any> = {};
+    // රෝගියා (Patient) අනුව ගෲප් කිරීමට Object එකක් සෑදීම
+    const overdueByPatient: Record<string, any> = {};
 
-    overdueLendings.forEach((lending) => {
+    // 3. (appointment: any) ලෙස දමා පළමු Error එක මඟහරවා ගත්තා.
+    overdueAppointments.forEach((appointment: any) => {
 
-     const reader = lending.reader as Patient; // castig
-    const readerId = reader.readerId; // 
+      // 'reader' වෙනුවට 'patient' ලෙස වෙනස් කරන ලදී
+      const patient = appointment.patient as unknown as Patient;
 
-      if (!overdueByReader[readerId]) {
-        overdueByReader[readerId] = {
-          reader: lending.reader,
-          overdueBooks: [],
+      // 4. Patient මොඩල් එකේ 'readerId' කියා එකක් නැත. ඒ වෙනුවට බොහෝවිට ඇත්තේ '_id' හෝ 'patientId' ය.
+      // මෙතන '_id' ලෙස නිවැරදි කර ඇත.
+      const patientId = (patient as any)._id || (patient as any).patientId;
+
+      if (!patientId) return; // රෝගියෙක් නැත්නම් loop එක skip කරයි
+
+      if (!overdueByPatient[patientId]) {
+        overdueByPatient[patientId] = {
+          patient: appointment.patient,
+          overdueAppointments: [],
         };
       }
 
-      overdueByReader[readerId].overdueBooks.push({
-        book: lending.book,
-        dueDate: lending.dueDate,
-        lentDate: lending.lentDate,
+      overdueByPatient[patientId].overdueAppointments.push({
+        doctor: appointment.doctor, // 'book' වෙනුවට
+        dueDate: appointment.dueDate,
+        appointmentDate: appointment.appointmentDate, // 'lentDate' වෙනුවට
       });
     });
 
-    res.status(200).json(Object.values(overdueByReader));
+    res.status(200).json(Object.values(overdueByPatient));
   } catch (err: any) {
-    next(new APIError(500, "Failed to fetch overdue books", err.message));
+    next(new APIError(500, "Failed to fetch overdue data", err.message));
   }
 };
