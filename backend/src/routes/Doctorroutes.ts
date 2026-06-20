@@ -2,8 +2,7 @@ import { Router } from "express";
 import { authenticateToken } from "../middleware/authenticateToken";
 import {
     createDoctor,
-    deleteDoctor,
-    getAllDoctors,
+    deleteDoctor, getAllDoctor,
     getDoctorById,
     updateDoctor,
 } from "../controllers/Doctorcontroller";
@@ -11,7 +10,7 @@ import {
 const doctorRouter = Router();
 
 doctorRouter.use(authenticateToken);
-doctorRouter.get("/", getAllDoctors);
+doctorRouter.get("/", getAllDoctor);
 doctorRouter.get("/:id", getDoctorById);
 doctorRouter.post("/", createDoctor);
 doctorRouter.put("/:id", updateDoctor);

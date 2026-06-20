@@ -23,6 +23,8 @@ const DoctorsTable: React.FC<DoctorsTableProps> = ({
                 <th className="px-4 py-3 text-center">Specialty</th>
                 <th className="px-4 py-3 text-center">Phone</th>
                 <th className="px-4 py-3 text-center">Available Days</th>
+                {/* 💡 1. වෙලාව පෙන්වීම සඳහා නව COLUMN එකක් එකතු කළා */}
+                <th className="px-4 py-3 text-center">Available Time</th>
                 <th className="px-4 py-3 text-center">Fee (LKR)</th>
                 <th className="px-4 py-3 text-center">Actions</th>
             </tr>
@@ -31,9 +33,11 @@ const DoctorsTable: React.FC<DoctorsTableProps> = ({
             <tbody>
             {doctors
                 .filter((doctor) => {
-                    const term = search.toLowerCase();
+                    const term = search.toLowerCase().trim();
 
                     const daysString = doctor.availableDays?.join(", ").toLowerCase() || "";
+                    // Search කරද්දී වෙලාව අනුවත් search වෙන්න logic එක ශක්තිමත් කළා
+                    const timeString = `${doctor.startTime || ""} ${doctor.endTime || ""}`.toLowerCase();
 
                     return (
                         term === "" ||
@@ -41,11 +45,23 @@ const DoctorsTable: React.FC<DoctorsTableProps> = ({
                         doctor.specialty.toLowerCase().includes(term) ||
                         doctor.doctorId.toLowerCase().includes(term) ||
                         doctor.phone.toLowerCase().includes(term) ||
-                        daysString.includes(term)
+                        daysString.includes(term) ||
+                        timeString.includes(term)
                     );
                 })
                 .map((doctor) => {
                     const targetId = doctor.doctorId || doctor._id || "";
+
+                    // 💡 2. 24-hour time එක 12-hour AM/PM format එකට හරවන සරල function එකක්
+                    const formatTime = (timeStr?: string) => {
+                        if (!timeStr) return "";
+                        const [hours, minutes] = timeStr.split(":");
+                        const h = parseInt(hours, 10);
+                        const ampm = h >= 12 ? "PM" : "AM";
+                        const formattedHours = h % 12 || 12;
+                        return `${formattedHours}:${minutes} ${ampm}`;
+                    };
+
                     return (
                         <tr
                             key={targetId}
@@ -74,6 +90,17 @@ const DoctorsTable: React.FC<DoctorsTableProps> = ({
                                 </div>
                             </td>
 
+                            {/* 💡 3. AVAILABLE TIME පෙන්වන කොටස (AM/PM විදිහට ලස්සනට පෙන්වයි) */}
+                            <td className="px-4 py-3 text-center">
+                                {doctor.startTime && doctor.endTime ? (
+                                    <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-full text-xs font-semibold tracking-wide">
+                                        {formatTime(doctor.startTime)} - {formatTime(doctor.endTime)}
+                                    </span>
+                                ) : (
+                                    <span className="text-gray-400 text-xs italic">Not Set</span>
+                                )}
+                            </td>
+
                             {/* Channelling Price */}
                             <td className="px-4 py-3 text-center font-semibold text-slate-700">
                                 {doctor.channellingPrice ? doctor.channellingPrice.toLocaleString() : "0"}/=
@@ -82,13 +109,13 @@ const DoctorsTable: React.FC<DoctorsTableProps> = ({
                             <td className="px-4 py-3 text-center">
                                 <div className="flex justify-center gap-2 flex-wrap">
                                     <button
-                                        className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded-md text-sm font-medium transition shadow-xs active:scale-95"
+                                        className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded-md text-sm font-medium transition shadow-xs active:scale-95 cursor-pointer"
                                         onClick={() => onView(targetId)}
                                     >
                                         View
                                     </button>
                                     <button
-                                        className="bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded-md text-sm font-medium transition shadow-xs active:scale-95"
+                                        className="bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded-md text-sm font-medium transition shadow-xs active:scale-95 cursor-pointer"
                                         onClick={() => onDelete(targetId)}
                                     >
                                         Delete

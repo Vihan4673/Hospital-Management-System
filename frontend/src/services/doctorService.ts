@@ -1,20 +1,16 @@
 import type { Doctor } from "../types/Doctor.ts";
 import apiClient from "./apiClient";
 
-// GET ALL DOCTORS
 export const getAllDoctors = async (): Promise<Doctor[]> => {
     const response = await apiClient.get("/doctor");
     return response.data;
 };
 
-// DELETE DOCTOR BY ID
 export const deleteDoctor = async (id: string): Promise<void> => {
     const response = await apiClient.delete(`/doctor/${id}`);
     return response.data;
 };
 
-// ADD A NEW DOCTOR
-// මෙතනදී Form එකෙන් එන availableDays (Array) සහ channellingPrice (Number) කෙලින්ම backend එකට pass වේ.
 export const addDoctor = async (
     doctorData: Omit<Doctor, "createdAt" | "updatedAt">
 ): Promise<Doctor> => {
@@ -22,7 +18,6 @@ export const addDoctor = async (
     return response.data;
 };
 
-// UPDATE DOCTOR BY ID
 export const updateDoctor = async (
     id: string,
     doctorData: Omit<Doctor, "createdAt" | "updatedAt">

@@ -8,6 +8,8 @@ export type Doctor = {
     specialty: string;
     channellingPrice: number;
     availableDays: string[];
+    startTime: string;
+    endTime: string;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -51,6 +53,16 @@ const DoctorSchema: Schema = new Schema<Doctor>(
             type: [String],
             required: true,
             default: [],
+        },
+        startTime: {
+            type: String,
+            required: true,
+            trim: true,
+        },
+        endTime: {
+            type: String,
+            required: true,
+            trim: true,
         },
     },
     {

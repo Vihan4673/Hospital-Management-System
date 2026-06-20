@@ -17,6 +17,8 @@ interface DoctorFormData {
   specialty: string;
   channellingPrice: number | string;
   availableDays: string[];
+  startTime: string;
+  endTime: string;
 }
 
 interface DoctorFormErrors {
@@ -26,6 +28,7 @@ interface DoctorFormErrors {
   specialty?: string;
   channellingPrice?: string;
   availableDays?: string;
+  time?: string;
 }
 
 const DAYS_OF_WEEK = [
@@ -53,6 +56,8 @@ const DoctorForm: React.FC<DoctorFormProps> = ({
     specialty: doctor?.specialty || "",
     channellingPrice: doctor?.channellingPrice || "",
     availableDays: doctor?.availableDays || [],
+    startTime: doctor?.startTime || "",
+    endTime: doctor?.endTime || "",
   });
 
   const [errors, setErrors] = React.useState<DoctorFormErrors>({});
@@ -84,10 +89,17 @@ const DoctorForm: React.FC<DoctorFormProps> = ({
       newErrors.availableDays = "Please select at least one available day";
     }
 
+    if (!formData.startTime || !formData.endTime) {
+      newErrors.time = "Both Start Time and End Time are required";
+    } else if (formData.startTime >= formData.endTime) {
+      newErrors.time = "Start Time must be earlier than End Time";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
+  // 💡 FIX: HTMLInputElement එකට අමතරව time input වලට ගැළපෙන සේ Event Type එක පුළුල් කළා
   const handleChange = (
       e: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -119,6 +131,7 @@ const DoctorForm: React.FC<DoctorFormProps> = ({
       onSave({
         ...formData,
         channellingPrice: Number(formData.channellingPrice),
+        _id: ""
       });
     }
   };
@@ -129,7 +142,7 @@ const DoctorForm: React.FC<DoctorFormProps> = ({
           <h2 className="text-2xl font-bold text-center w-full text-blue-800">
             {isEditing ? "EDIT DOCTOR DETAILS" : "ADD NEW DOCTOR"}
           </h2>
-          <button type="button" onClick={onClose} className="hover:bg-gray-100 rounded-full p-1.5 transition-colors">
+          <button type="button" onClick={onClose} className="hover:bg-gray-100 rounded-full p-1.5 transition-colors cursor-pointer">
             <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor" className="text-gray-500">
               <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z" />
             </svg>
@@ -219,7 +232,35 @@ const DoctorForm: React.FC<DoctorFormProps> = ({
               {errors.channellingPrice && <p className="text-red-500 text-xs mt-1">{errors.channellingPrice}</p>}
             </div>
 
-            <div className="sm:col-span-2 mt-2 bg-slate-50 p-4 rounded-lg border">
+            {/* Channelling Session Time */}
+            <div className="bg-slate-50 border p-4 rounded-lg sm:col-span-2 grid grid-cols-2 gap-4">
+              <div className="col-span-2 mb-1">
+                <label className="font-semibold text-blue-800">Channelling Session Time</label>
+              </div>
+              <div>
+                <label className="block mb-1 font-medium text-xs text-gray-600">Start Time (From)</label>
+                <input
+                    type="time"
+                    name="startTime"
+                    className="border p-2 rounded-lg w-full bg-white focus:border-blue-500 outline-none transition cursor-pointer"
+                    value={formData.startTime}
+                    onChange={handleChange}
+                />
+              </div>
+              <div>
+                <label className="block mb-1 font-medium text-xs text-gray-600">End Time (To)</label>
+                <input
+                    type="time"
+                    name="endTime"
+                    className="border p-2 rounded-lg w-full bg-white focus:border-blue-500 outline-none transition cursor-pointer"
+                    value={formData.endTime}
+                    onChange={handleChange}
+                />
+              </div>
+              {errors.time && <p className="text-red-500 text-xs col-span-2 mt-1">{errors.time}</p>}
+            </div>
+
+            <div className="sm:col-span-2 bg-slate-50 p-4 rounded-lg border">
               <label className="block mb-2 font-semibold text-blue-800">Available Days for Channelling</label>
               <div className="flex flex-wrap gap-2">
                 {DAYS_OF_WEEK.map((day) => {
@@ -249,13 +290,13 @@ const DoctorForm: React.FC<DoctorFormProps> = ({
             <button
                 type="button"
                 onClick={onClose}
-                className="px-5 py-2 rounded-full border border-gray-300 font-medium text-gray-700 hover:bg-gray-50 transition"
+                className="px-5 py-2 rounded-full border border-gray-300 font-medium text-gray-700 hover:bg-gray-50 transition cursor-pointer"
             >
               Cancel
             </button>
             <button
                 type="submit"
-                className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-full font-medium shadow-sm transition active:scale-98 disabled:opacity-70"
+                className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-full font-medium shadow-sm transition active:scale-98 disabled:opacity-70 cursor-pointer"
                 disabled={isSaving}
             >
               {isSaving ? "Saving..." : "Save Details"}
