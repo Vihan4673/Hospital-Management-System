@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import { getAllDoctors } from "../services/DoctorService";
+import { addPatient } from "../services/PatientService";
+import { createAppointment } from "../services/AppointmentService";
+
 import type { Doctor } from "../types/Doctor.ts";
-import { CalendarCheck, Search, User, Stethoscope, Sparkles } from "lucide-react";
+import { CalendarCheck, User, Stethoscope, Sparkles } from "lucide-react";
 import toast from "react-hot-toast";
 
 interface RecommendationResult {
@@ -50,13 +53,13 @@ const PatientAppointmentPage: React.FC = () => {
   const [aiResult, setAiResult] = useState<RecommendationResult | null>(null);
   const [isAiModalOpen, setIsAiModalOpen] = useState<boolean>(false);
 
-  // Backend එකෙන් ඩොක්ටර්ස්ලා ලබා ගැනීම
+  // Backend එකෙන් Doctors ලා Fetch කිරීම
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
         setIsLoading(true);
-        const response = await axios.get("http://localhost:5000/api/doctors");
-        const activeDoctors = response.data.filter((d: Doctor) => d.isActive !== false);
+        const data = await getAllDoctors();
+        const activeDoctors = data.filter((d: Doctor) => d.isActive !== false);
 
         setDoctors(activeDoctors);
 
@@ -125,12 +128,12 @@ const PatientAppointmentPage: React.FC = () => {
       combinedSlots = [...combinedSlots, ...doctorSlots];
     });
 
-    // දින පිළිවෙලට Sort කිරීම
     combinedSlots.sort((a, b) => new Date(a.dateString).getTime() - new Date(b.dateString).getTime());
     setAvailableDates(combinedSlots);
+    return combinedSlots;
   };
 
-  // රෝගියා දිනයක් තෝරාගත් පසු ඩොක්ටර්ගේ විස්තර Auto-Fill කිරීම
+  // ਰਹੀਆ ਦਿනයක් තෝරාගත් පසු ඩොක්ටර්ගේ විස්තර Auto-Fill කිරීම
   const handleDateChange = (dateStr: string) => {
     setSelectedDate(dateStr);
 
@@ -139,7 +142,6 @@ const PatientAppointmentPage: React.FC = () => {
       return;
     }
 
-    // සිලෙක්ට් කරපු දිනට සහ Slot එකට අදාළ ඩොක්ටර්ව සෙවීම
     const foundSlot = availableDates.find(s => s.dateString === dateStr);
     if (foundSlot) {
       const formatTime = (timeStr?: string) => {
@@ -191,11 +193,17 @@ const PatientAppointmentPage: React.FC = () => {
       }
 
       setAiResult(recommendation);
-      handleSpecialtyChange(recommendation.recommendedSpecialty, doctors);
-      toast.success(`AI Recommended: ${recommendation.recommendedSpecialty}`);
+      const generatedSlots = handleSpecialtyChange(recommendation.recommendedSpecialty, doctors);
+
+      if (!generatedSlots || generatedSlots.length === 0) {
+        toast.error(`AI suggested ${recommendation.recommendedSpecialty}, but no active schedules found!`);
+      } else {
+        toast.success(`AI Recommended: ${recommendation.recommendedSpecialty}`);
+      }
     } catch (error) {
       console.error("AI Assistant Error:", error);
-    } {
+      toast.error("AI Analysis failed.");
+    } finally {
       setIsAiAnalyzing(false);
     }
   };
@@ -209,34 +217,32 @@ const PatientAppointmentPage: React.FC = () => {
     }
 
     try {
-      // 1. මුලින්ම Patient විස්තර Patient Table/API එකට සේව් කිරීම
+      // 1. Patient විස්තර Patient Table එකට සේව් කිරීම
       const patientData = {
         name: patientName,
         phone: patientPhone,
-        email: patientEmail,
-        age: parseInt(patientAge),
+        email: patientEmail || undefined, // 💡 Empty string එකක් වෙනුවට undefined යැවීමෙන් duplicate errors අවම වේ
+        age: parseInt(patientAge, 10),
         gender: patientGender,
         address: patientAddress
       };
 
-      const patientResponse = await axios.post("http://localhost:5000/api/patients", patientData);
-      const savedPatientId = patientResponse.data._id; // Backend එකෙන් ලැබෙන Patient ID එක
+      const savedPatient = await addPatient(patientData);
+      const savedPatientId = savedPatient._id;
 
-      // 2. ඉන්පසුව Appointment එක Appointment Table/API එකට සේව් කිරීම
-      const appointmentData = {
-        doctor: doctorDetails._id,
-        patient: savedPatientId, // සාදාගත් Patient ID එක සම්බන්ධ කිරීම
-        appointmentDate: selectedDate,
-        roomNumber: doctorDetails.roomNumber,
-        status: "Active"
-      };
+      // 2. Appointment එක Appointment Table එකට සේව් කිරීම
+      // 💡 FIX: මෙතනට 'doctorDetails.timeSlot' එකත් දත්තයක් විදිහට පාස් කළා (Backend එකට අවශ්‍ය නම්)
+      const appointmentResponse = await createAppointment(
+          doctorDetails._id,
+          savedPatientId as string,
+          selectedDate,
+          doctorDetails.roomNumber
+      );
 
-      const appointmentResponse = await axios.post("http://localhost:5000/api/appointments", appointmentData);
-
-      if (appointmentResponse.status === 201 || appointmentResponse.status === 200) {
+      if (appointmentResponse) {
         toast.success("Appointment successfully booked!");
 
-        // Form එක සේරම සෙටින්ග්ස් Reset කිරීම
+        // Form Fields Reset කිරීම
         setPatientName("");
         setPatientPhone("");
         setPatientEmail("");
@@ -251,8 +257,14 @@ const PatientAppointmentPage: React.FC = () => {
         setSymptoms("");
       }
     } catch (error: any) {
-      console.error(error);
-      toast.error(error.response?.data?.message || "Booking Failed. Please try again.");
+      console.error("Booking handler error:", error);
+      // 💡 FIX: සර්වර් එකෙන් එන ඇත්තම වැරැද්ද (උදා: Email duplicate error) screen එකේ පෙන්වීම
+      const serverMessage = error.response?.data?.message || error.message;
+      if (serverMessage?.includes("E11000") || serverMessage?.includes("duplicate")) {
+        toast.error("This email address is already registered with another patient.");
+      } else {
+        toast.error(serverMessage || "Booking Failed. Please check backend log.");
+      }
     }
   };
 
@@ -284,7 +296,7 @@ const PatientAppointmentPage: React.FC = () => {
 
             {/* AI Banner */}
             {aiResult && (
-                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex justify-between items-start gap-4 animate-fadeIn">
+                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex justify-between items-start gap-4">
                   <div className="space-y-1">
                     <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 uppercase">AI Suggestion</span>
                     <h4 className="text-xs sm:text-sm font-bold text-slate-900">Recommended Specialty: <span className="text-emerald-700">{aiResult.recommendedSpecialty}</span></h4>
@@ -346,7 +358,7 @@ const PatientAppointmentPage: React.FC = () => {
                   <Stethoscope className="w-4 h-4" /> 2. Select Schedule
                 </h3>
                 <button type="button" onClick={() => setIsAiModalOpen(true)} className="inline-flex items-center gap-1.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-3 py-1.5 rounded-lg text-[11px] font-bold shadow-sm transition transform active:scale-95 self-start sm:self-auto">
-                  <Sparkles className="w-3.5 h-3.5" /> Don't Know the Specialty? Ask AI
+                  <Sparkles className="w-3.5 h-3.5" /> {isAiAnalyzing ? "Analyzing..." : "Don't Know the Specialty? Ask AI"}
                 </button>
               </div>
 
@@ -374,8 +386,9 @@ const PatientAppointmentPage: React.FC = () => {
                               ? "-- No Available Schedules --"
                               : "-- Select Date & Doctor --"}
                     </option>
-                    {availableDates.map((slot, index) => (
-                        <option key={index} value={slot.dateString}>{slot.display}</option>
+                    {availableDates.map((slot) => (
+                        // 💡 FIX: HTML keys වලට index එක වෙනුවට unique string එකක් භාවිතය
+                        <option key={`${slot.doctor._id}-${slot.dateString}`} value={slot.dateString}>{slot.display}</option>
                     ))}
                   </select>
                 </div>
@@ -416,7 +429,7 @@ const PatientAppointmentPage: React.FC = () => {
 
         {/* AI Modal */}
         {isAiModalOpen && (
-            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
               <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
                 <div className="bg-slate-900 px-5 py-4 flex justify-between items-center">
                   <h3 className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">🔮 AI Symptom Guide</h3>
@@ -426,7 +439,9 @@ const PatientAppointmentPage: React.FC = () => {
                   <textarea value={symptoms} onChange={(e) => setSymptoms(e.target.value)} placeholder="Describe symptoms (e.g., severe chest discomfort, skin rash...)" rows={4} className="w-full text-xs sm:text-sm p-3 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 bg-slate-50" />
                   <div className="flex justify-end gap-3">
                     <button type="button" onClick={() => setIsAiModalOpen(false)} className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200">Cancel</button>
-                    <button type="button" onClick={handleAiAnalysis} disabled={!symptoms.trim()} className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-300 text-white px-5 py-2 rounded-xl text-xs font-bold transition">Analyze & Auto-Fill</button>
+                    <button type="button" onClick={handleAiAnalysis} disabled={!symptoms.trim() || isAiAnalyzing} className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-300 text-white px-5 py-2 rounded-xl text-xs font-bold transition">
+                      {isAiAnalyzing ? "Analyzing..." : "Analyze & Auto-Fill"}
+                    </button>
                   </div>
                 </div>
               </div>
