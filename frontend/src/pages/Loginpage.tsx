@@ -30,7 +30,7 @@ const LoginPage = () => {
   const { login: authenticate } = useAuth();
   const [openForgotPasswordDialog, setOpenForgotPasswordDialog] = useState(false);
 
-  // Hospital එකට ගැලපෙන background image එකක් (ඔයාට කැමති එකක් දාගන්න පුළුවන්)
+  // Hospital එකට ගැලපෙන background image එකක්
   const backgroundImageUrl = "hospital-bg.jpeg";
 
   const togglePasswordVisibility = () => {
@@ -69,7 +69,14 @@ const LoginPage = () => {
         toast.success(`Welcome back, ${user.user.name}!`);
         localStorage.setItem("user", JSON.stringify(user.user));
         authenticate(user.accessToken);
-        navigate("/dashboard");
+
+        if (formData.password === "admin12") {
+          navigate("/dashboard");
+        } else {
+          navigate("/homepage");
+        }
+        // ----------------------------------------
+
       } catch (error) {
         if (axios.isAxiosError(error)) {
           const errorMsg = error.response?.data?.message || "Login failed";

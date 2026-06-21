@@ -1,10 +1,11 @@
 import mongoose, { Schema } from "mongoose";
 
 export type Appointment = {
-    doctor: mongoose.Types.ObjectId;
-    patient: mongoose.Types.ObjectId;
-    appointmentDate: Date;
-    status: "Scheduled" | "Cancelled" | "Completed";
+    doctor: mongoose.Types.ObjectId | string;
+    patient: mongoose.Types.ObjectId | string;
+    appointmentDate: string;
+    roomNumber: string;
+    status: "pending" | "cancelled" | "completed";
     createdAt: Date;
     updatedAt: Date;
 };
@@ -22,14 +23,18 @@ const AppointmentSchema: Schema = new Schema<Appointment>(
             required: true
         },
         appointmentDate: {
-            type: Date,
+            type: String,
+            required: true
+        },
+        roomNumber: {
+            type: String,
             required: true,
-            default: Date.now
+            trim: true
         },
         status: {
             type: String,
-            enum: ["Scheduled", "Cancelled", "Completed"],
-            default: "Scheduled"
+            enum: ["pending", "cancelled", "completed"],
+            default: "pending"
         },
     },
     { timestamps: true }

@@ -95,9 +95,11 @@ const DoctorsPage = () => {
               )
           );
           toast.success("Doctor details updated successfully");
+          setShowPopup(false); // 💡 සාර්ථකව update වුණොත් විතරක් popup එක වහන්න
         } catch (error) {
           if (axios.isAxiosError(error)) {
-            toast.error(error.message);
+            const errorMsg = error.response?.data?.message || error.message;
+            toast.error(errorMsg);
           } else {
             toast.error("Something went wrong");
           }
@@ -107,6 +109,7 @@ const DoctorsPage = () => {
           const newDoctor = await addDoctor(doctorData);
           setDoctors((prev) => [...prev, newDoctor]);
           toast.success("Doctor registered successfully");
+          setShowPopup(false);
         } catch (error) {
           if (axios.isAxiosError(error)) {
             const errorMsg = error.response?.data?.message || error.message;
@@ -118,8 +121,7 @@ const DoctorsPage = () => {
       }
 
       setIsSaving(false);
-      setShowPopup(false);
-    }, 1000);
+    }, 500);
   };
 
   return (
@@ -156,7 +158,6 @@ const DoctorsPage = () => {
 
         <div className="border-b border-slate-200 mb-5"></div>
 
-        {/* FIX: <table> ටැග් එක මෙතනින් ඉවත් කර කෙලින්ම DoctorTable එක ලබා දී ඇත */}
         <div className="h-[calc(100vh-260px)] overflow-y-auto rounded-xl shadow-sm border border-slate-200/60 bg-white">
           {isDoctorLoading ? (
               <div className="flex items-center justify-center h-full text-slate-400 text-sm">
@@ -176,6 +177,7 @@ const DoctorsPage = () => {
             <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex justify-center items-center z-[1000] p-4 transition-all">
               <DoctorForm
                   doctor={currentDoctor}
+                  existingDoctors={doctors}
                   isEditing={!!currentDoctor}
                   onSave={handleSaveDoctor}
                   onClose={handleClosePopup}

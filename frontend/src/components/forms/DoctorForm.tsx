@@ -3,6 +3,7 @@ import type { Doctor } from "../../types/Doctor.ts";
 
 interface DoctorFormProps {
   doctor?: Doctor | null;
+  existingDoctors: Doctor[]; // 💡 අනෙක් වෛද්‍යවරුන්ගේ ලැයිස්තුව (කාමර චෙක් කිරීමට අවශ්‍යයි)
   isEditing: boolean;
   isSaving: boolean;
   onSave: (doctor: Omit<Doctor, "createdAt" | "updatedAt">) => void;
@@ -15,6 +16,7 @@ interface DoctorFormData {
   email: string;
   phone: string;
   specialty: string;
+  roomNumber: string; // 💡 Room Number එක එකතු කළා
   channellingPrice: number | string;
   availableDays: string[];
   startTime: string;
@@ -26,6 +28,7 @@ interface DoctorFormErrors {
   email?: string;
   phone?: string;
   specialty?: string;
+  roomNumber?: string; // 💡 Room Number Error එක
   channellingPrice?: string;
   availableDays?: string;
   time?: string;
@@ -43,6 +46,7 @@ const DAYS_OF_WEEK = [
 
 const DoctorForm: React.FC<DoctorFormProps> = ({
                                                  doctor,
+                                                 existingDoctors = [], // Default empty array
                                                  isEditing,
                                                  isSaving,
                                                  onSave,
@@ -54,6 +58,7 @@ const DoctorForm: React.FC<DoctorFormProps> = ({
     email: doctor?.email || "",
     phone: doctor?.phone || "",
     specialty: doctor?.specialty || "",
+    roomNumber: doctor?.roomNumber || "", // 💡 Initial value එක
     channellingPrice: doctor?.channellingPrice || "",
     availableDays: doctor?.availableDays || [],
     startTime: doctor?.startTime || "",
@@ -61,6 +66,11 @@ const DoctorForm: React.FC<DoctorFormProps> = ({
   });
 
   const [errors, setErrors] = React.useState<DoctorFormErrors>({});
+
+  // 💡 වේලාවන් එකිනෙක ගැටෙනවාදැයි (Overlap) පරීක්ෂා කරන Function එක
+  const isTimeOverlapping = (start1: string, end1: string, start2: string, end2: string) => {
+    return start1 < end2 && start2 < end1;
+  };
 
   const validateForm = (): boolean => {
     const newErrors: DoctorFormErrors = {};
@@ -81,6 +91,10 @@ const DoctorForm: React.FC<DoctorFormProps> = ({
 
     if (!formData.specialty.trim()) newErrors.specialty = "Specialty is required";
 
+    if (!formData.roomNumber.trim()) {
+      newErrors.roomNumber = "Room number is required";
+    }
+
     if (formData.channellingPrice === "" || Number(formData.channellingPrice) <= 0) {
       newErrors.channellingPrice = "Please enter a valid channelling price";
     }
@@ -95,16 +109,36 @@ const DoctorForm: React.FC<DoctorFormProps> = ({
       newErrors.time = "Start Time must be earlier than End Time";
     }
 
+    // 💡 ─── ROOM AVAILABILITY & CONFLICT CHECK LOGIC ───
+    if (formData.roomNumber.trim() && formData.startTime && formData.endTime && formData.availableDays.length > 0) {
+
+      const hasConflict = existingDoctors.some((doc) => {
+        // Edit කරන වෙලාවට තමන්ගේම පැරණි රෙකෝඩ් එක මඟ හැරීමට (Skip current doctor)
+        if (isEditing && doc._id === doctor?._id) return false;
+
+        // 1. එකම කාමරයද බලන්න
+        const isSameRoom = doc.roomNumber?.toLowerCase().trim() === formData.roomNumber.toLowerCase().trim();
+
+        // 2. තෝරපු දවස් වලින් එක දවසක් හෝ සමානද බලන්න (Shared Days)
+        const sharesDays = doc.availableDays.some((day) => formData.availableDays.includes(day));
+
+        // 3. වේලාවන් එකිනෙක ගැටෙනවාද බලන්න (Time Overlap)
+        const sharesTime = isTimeOverlapping(formData.startTime, formData.endTime, doc.startTime, doc.endTime);
+
+        return isSameRoom && sharesDays && sharesTime;
+      });
+
+      if (hasConflict) {
+        newErrors.roomNumber = "This room is already reserved by another doctor for the selected day/time slot.";
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  // 💡 FIX: HTMLInputElement එකට අමතරව time input වලට ගැළපෙන සේ Event Type එක පුළුල් කළා
-  const handleChange = (
-      e: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-
     setFormData((prev) => ({
       ...prev,
       [name]: name === "channellingPrice" ? (value === "" ? "" : Number(value)) : value,
@@ -118,10 +152,7 @@ const DoctorForm: React.FC<DoctorFormProps> = ({
           ? prev.availableDays.filter((d) => d !== day)
           : [...prev.availableDays, day];
 
-      return {
-        ...prev,
-        availableDays: updatedDays,
-      };
+      return { ...prev, availableDays: updatedDays };
     });
   };
 
@@ -131,7 +162,8 @@ const DoctorForm: React.FC<DoctorFormProps> = ({
       onSave({
         ...formData,
         channellingPrice: Number(formData.channellingPrice),
-        _id: ""
+        _id: doctor?._id || "",
+        isActive: doctor?.isActive ?? true
       });
     }
   };
@@ -216,6 +248,20 @@ const DoctorForm: React.FC<DoctorFormProps> = ({
                   onChange={handleChange}
               />
               {errors.specialty && <p className="text-red-500 text-xs mt-1">{errors.specialty}</p>}
+            </div>
+
+            {/* 💡 ROOM NUMBER INPUT FIELD */}
+            <div>
+              <label className="block mb-1 font-medium">Assigned Room Number</label>
+              <input
+                  type="text"
+                  name="roomNumber"
+                  className="border p-2 rounded-lg w-full bg-slate-50 focus:border-blue-500 outline-none transition"
+                  placeholder="Ex: Room 101 / OPD-02"
+                  value={formData.roomNumber}
+                  onChange={handleChange}
+              />
+              {errors.roomNumber && <p className="text-red-500 text-xs mt-1 font-semibold">{errors.roomNumber}</p>}
             </div>
 
             <div>

@@ -21,9 +21,10 @@ const DoctorsTable: React.FC<DoctorsTableProps> = ({
                 <th className="px-4 py-3 text-center">Doctor ID</th>
                 <th className="px-4 py-3 text-center">Name</th>
                 <th className="px-4 py-3 text-center">Specialty</th>
+                {/* 💡 1. ROOM NUMBER පෙන්වීම සඳහා නව COLUMN එකක් එකතු කළා */}
+                <th className="px-4 py-3 text-center">Assigned Room</th>
                 <th className="px-4 py-3 text-center">Phone</th>
                 <th className="px-4 py-3 text-center">Available Days</th>
-                {/* 💡 1. වෙලාව පෙන්වීම සඳහා නව COLUMN එකක් එකතු කළා */}
                 <th className="px-4 py-3 text-center">Available Time</th>
                 <th className="px-4 py-3 text-center">Fee (LKR)</th>
                 <th className="px-4 py-3 text-center">Actions</th>
@@ -36,8 +37,9 @@ const DoctorsTable: React.FC<DoctorsTableProps> = ({
                     const term = search.toLowerCase().trim();
 
                     const daysString = doctor.availableDays?.join(", ").toLowerCase() || "";
-                    // Search කරද්දී වෙලාව අනුවත් search වෙන්න logic එක ශක්තිමත් කළා
                     const timeString = `${doctor.startTime || ""} ${doctor.endTime || ""}`.toLowerCase();
+                    // 💡 2. Search කරද්දී Room Number එක අනුවත් filter වෙන්න එකතු කළා
+                    const roomString = (doctor.roomNumber || "").toLowerCase();
 
                     return (
                         term === "" ||
@@ -46,13 +48,14 @@ const DoctorsTable: React.FC<DoctorsTableProps> = ({
                         doctor.doctorId.toLowerCase().includes(term) ||
                         doctor.phone.toLowerCase().includes(term) ||
                         daysString.includes(term) ||
-                        timeString.includes(term)
+                        timeString.includes(term) ||
+                        roomString.includes(term)
                     );
                 })
                 .map((doctor) => {
-                    const targetId = doctor.doctorId || doctor._id || "";
+                    // 💡 Backend එකෙන් එන Object ID එක හෝ Doctor ID එක ගන්නා ක්‍රමය නිවැරදි කළා
+                    const targetId = doctor._id || doctor.doctorId || "";
 
-                    // 💡 2. 24-hour time එක 12-hour AM/PM format එකට හරවන සරල function එකක්
                     const formatTime = (timeStr?: string) => {
                         if (!timeStr) return "";
                         const [hours, minutes] = timeStr.split(":");
@@ -70,6 +73,18 @@ const DoctorsTable: React.FC<DoctorsTableProps> = ({
                             <td className="px-4 py-3 text-center font-medium text-slate-700">{doctor.doctorId}</td>
                             <td className="px-4 py-3 text-center text-slate-800 font-medium">{doctor.name}</td>
                             <td className="px-4 py-3 text-center text-slate-600">{doctor.specialty}</td>
+
+                            {/* 💡 3. ROOM NUMBER පෙන්වන කොටස */}
+                            <td className="px-4 py-3 text-center">
+                                {doctor.roomNumber ? (
+                                    <span className="bg-slate-100 text-slate-700 font-semibold px-2 py-1 rounded border border-slate-200 text-xs">
+                                        {doctor.roomNumber}
+                                    </span>
+                                ) : (
+                                    <span className="text-rose-400 text-xs italic font-medium">No Room</span>
+                                )}
+                            </td>
+
                             <td className="px-4 py-3 text-center text-slate-600">{doctor.phone}</td>
 
                             {/* Available Days Badges */}
@@ -81,8 +96,8 @@ const DoctorsTable: React.FC<DoctorsTableProps> = ({
                                                 key={index}
                                                 className="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-md text-[11px] font-medium"
                                             >
-                                  {day}
-                                </span>
+                                                {day}
+                                            </span>
                                         ))
                                     ) : (
                                         <span className="text-gray-400 text-xs italic">Not Set</span>
@@ -90,10 +105,10 @@ const DoctorsTable: React.FC<DoctorsTableProps> = ({
                                 </div>
                             </td>
 
-                            {/* 💡 3. AVAILABLE TIME පෙන්වන කොටස (AM/PM විදිහට ලස්සනට පෙන්වයි) */}
+                            {/* Available Time Slot */}
                             <td className="px-4 py-3 text-center">
                                 {doctor.startTime && doctor.endTime ? (
-                                    <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-full text-xs font-semibold tracking-wide">
+                                    <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-full text-xs font-semibold tracking-wide block whitespace-nowrap">
                                         {formatTime(doctor.startTime)} - {formatTime(doctor.endTime)}
                                     </span>
                                 ) : (
@@ -109,12 +124,14 @@ const DoctorsTable: React.FC<DoctorsTableProps> = ({
                             <td className="px-4 py-3 text-center">
                                 <div className="flex justify-center gap-2 flex-wrap">
                                     <button
+                                        type="button"
                                         className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded-md text-sm font-medium transition shadow-xs active:scale-95 cursor-pointer"
                                         onClick={() => onView(targetId)}
                                     >
                                         View
                                     </button>
                                     <button
+                                        type="button"
                                         className="bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded-md text-sm font-medium transition shadow-xs active:scale-95 cursor-pointer"
                                         onClick={() => onDelete(targetId)}
                                     >

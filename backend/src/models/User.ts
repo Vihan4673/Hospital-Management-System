@@ -13,14 +13,19 @@ const userSchema = new mongoose.Schema({
     trim: true,
     lowercase: true,
     match: [
-        /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
-        "Please enter a valid email address",
-      ],
+      /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
+      "Please enter a valid email address",
+    ],
   },
   password: {
     type: String,
     required: [true, "Password is required"],
   },
+  role: {
+    type: String,
+    enum: ["patient", "admin"],
+    default: "patient"
+  }
 })
 
 const UserModel = mongoose.model("User", userSchema)

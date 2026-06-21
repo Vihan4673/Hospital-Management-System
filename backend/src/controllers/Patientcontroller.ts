@@ -4,24 +4,28 @@ import mongoose from 'mongoose';
 import { APIError } from '../errors/APIError';
 
 const generatePatientId = async (): Promise<string> => {
-    const lastPatient = await PatientModel.findOne().sort({ createdAt: -1 }).exec();
+    try {
+        const lastPatient = await PatientModel.findOne().sort({ createdAt: -1 }).exec();
 
-    if (!lastPatient || !lastPatient.patientId) {
-        return 'PAT001';
+        if (!lastPatient || !lastPatient.patientId) {
+            return 'PAT001';
+        }
+
+        const lastIdNumber = parseInt(lastPatient.patientId.substring(3));
+        const newIdNumber = isNaN(lastIdNumber) ? 1 : lastIdNumber + 1;
+        const padded = String(newIdNumber).padStart(3, '0');
+
+        return `PAT${padded}`;
+    } catch (err) {
+        return 'PAT001'; // 💡 Error එකක් ආවොත් සර්වර් එක ක්‍රෑෂ් නොවී default ID එකක් දීම
     }
-
-    const lastIdNumber = parseInt(lastPatient.patientId.substring(3));
-    const newIdNumber = lastIdNumber + 1;
-    const padded = String(newIdNumber).padStart(3, '0');
-
-    return `PAT${padded}`;
 };
 
 export const createPatient = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const patientId = await generatePatientId();
-
         const { name, email, phone, age, gender, address } = req.body;
+
         const newPatient = new PatientModel({
             patientId,
             name,
@@ -35,6 +39,7 @@ export const createPatient = async (req: Request, res: Response, next: NextFunct
         const savedPatient = await newPatient.save();
         return res.status(201).json(savedPatient);
     } catch (error: any) {
+        console.error("🔥 PATIENT CREATE ERROR:", error);
         if (error instanceof mongoose.Error.ValidationError) {
             const errors = Object.values(error.errors).map((e) => e.message);
             return next(new APIError(400, "Validation failed", errors));
@@ -43,13 +48,9 @@ export const createPatient = async (req: Request, res: Response, next: NextFunct
     }
 };
 
-export const getPatientById = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-) => {
+export const getPatientById = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const patient = await PatientModel.findOne({ patientId: req.params.id });
+        const patient = await PatientModel.findOne({ patientId: req.params.id }).lean();
         if (!patient) {
             return next(new APIError(404, "Patient not found"));
         }
@@ -59,15 +60,12 @@ export const getPatientById = async (
     }
 };
 
-export const getAllPatients = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-) => {
+export const getAllPatients = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const patients = await PatientModel.find();
+        const patients = await PatientModel.find().lean();
         res.status(200).json(patients);
     } catch (error: any) {
+        console.error("🔥 GET ALL PATIENTS ERROR:", error);
         next(new APIError(500, "Internal server Error", error.message));
     }
 };
@@ -78,7 +76,8 @@ export const updatePatient = async (req: Request, res: Response, next: NextFunct
             { patientId: req.params.id },
             req.body,
             { new: true, runValidators: true }
-        );
+        ).lean();
+
         if (!updated) return next(new APIError(404, "Patient not found"));
         res.status(200).json(updated);
     } catch (err: any) {

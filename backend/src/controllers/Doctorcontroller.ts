@@ -22,17 +22,54 @@ const generateNextDoctorId = async (): Promise<string> => {
     const nextIdNumber = lastIdNumber + 1;
     return `DOC${String(nextIdNumber).padStart(3, '0')}`;
   } catch (error) {
-    return 'DOC001'; // මොකක් හරි අවුලක් වුණොත් crash නොවී බේරෙන්න
+    return 'DOC001';
   }
+};
+
+// 💡 ─── ROOM AVAILABILITY CHECK HELPER FUNCTION ───
+// එකම කාමරය, එකම දවස්වල, එකම වෙලාවක ගැටෙනවාදැයි පරීක්ෂා කිරීම
+const checkRoomConflict = async (
+    roomNumber: string,
+    availableDays: string[],
+    startTime: string,
+    endTime: string,
+    excludeDoctorId?: string
+): Promise<boolean> => {
+  if (!roomNumber || !availableDays || !startTime || !endTime) return false;
+
+  // Query සකස් කිරීම
+  const query: any = {
+    roomNumber: { $regex: new RegExp(`^${roomNumber.trim()}$`, 'i') }, // Case-insensitive check
+    availableDays: { $in: availableDays }, // තෝරාගත් දවස් වලින් එකක් හෝ තිබේදැයි බැලීම
+    $and: [
+      { startTime: { $lt: endTime } },  // පවතින startTime එක අලුත් endTime එකට වඩා අඩු විය යුතුය
+      { endTime: { $gt: startTime } }   // පවතින endTime එක අලුත් startTime එකට වඩා වැඩි විය යුතුය
+    ]
+  };
+
+  // Update එකකදී තමන්ගේම පරණ රෙකෝඩ් එක මඟ හැරීමට (Exclude current doctor)
+  if (excludeDoctorId) {
+    query._id = { $ne: new mongoose.Types.ObjectId(excludeDoctorId) };
+  }
+
+  const conflictingDoctor = await DoctorModel.findOne(query);
+  return !!conflictingDoctor; // තිබේ නම් true, නැත්නම් false
 };
 
 export const createDoctor = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { name, email, phone, specialty, channellingPrice, availableDays, startTime, endTime } = req.body;
+    // 💡 roomNumber එක req.body එකෙන් ලබා ගැනීම
+    const { name, email, phone, specialty, roomNumber, channellingPrice, availableDays, startTime, endTime } = req.body;
 
     const existingDoctor = await DoctorModel.findOne({ email });
     if (existingDoctor) {
       return next(new APIError(400, 'Doctor with this email already exists'));
+    }
+
+    // 💡 1. Backend Room Conflict Validation
+    const hasRoomConflict = await checkRoomConflict(roomNumber, availableDays, startTime, endTime);
+    if (hasRoomConflict) {
+      return next(new APIError(400, 'The assigned room is already reserved by another doctor for the selected schedule.'));
     }
 
     const doctorId = await generateNextDoctorId();
@@ -43,6 +80,7 @@ export const createDoctor = async (req: Request, res: Response, next: NextFuncti
       email,
       phone,
       specialty,
+      roomNumber, // 💡 Save කිරීම
       channellingPrice,
       availableDays,
       startTime,
@@ -52,7 +90,7 @@ export const createDoctor = async (req: Request, res: Response, next: NextFuncti
     const savedDoctor = await newDoctor.save();
     return res.status(201).json(savedDoctor);
   } catch (err: any) {
-    console.error("🔴 Create Doctor Error Details:", err); // 👈 Backend Terminal එකේ නියම වැරැද්ද බලාගන්න
+    console.error("🔴 Create Doctor Error Details:", err);
     if (err instanceof mongoose.Error.ValidationError) {
       const errors = Object.values(err.errors).map(e => e.message);
       return next(new APIError(400, 'Validation failed', errors));
@@ -72,7 +110,6 @@ export const getAllDoctor = async (req: Request, res: Response, next: NextFuncti
 
 export const getDoctorById = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // Frontend එකෙන් වැරදීමකින් එන තිත්/colon (:) අයින් කර පිරිසිදු කර ගැනීම
     const cleanId = req.params.id.trim().replace(':', '');
 
     const query = mongoose.Types.ObjectId.isValid(cleanId)
@@ -97,10 +134,25 @@ export const updateDoctor = async (req: Request, res: Response, next: NextFuncti
 
     const { doctorId, ...updateData } = req.body;
 
+    // 💡 2. Update කරන වෙලාවටත් Room එක වෙනත් අයෙක් බුක් කරලාදැයි බැලීම (තමන්ගේ පරණ ID එක හැර)
+    if (updateData.roomNumber && updateData.availableDays && updateData.startTime && updateData.endTime) {
+      const hasRoomConflict = await checkRoomConflict(
+          updateData.roomNumber,
+          updateData.availableDays,
+          updateData.startTime,
+          updateData.endTime,
+          cleanId
+      );
+
+      if (hasRoomConflict) {
+        return next(new APIError(400, 'The updated room allocation conflicts with another existing doctor schedule.'));
+      }
+    }
+
     const updatedDoctor = await DoctorModel.findOneAndUpdate(
         { _id: cleanId },
         updateData,
-        { new: true, runValidators: false } // 👈 පරණ දත්ත නිසා crash වෙන එක නවතින්න මේක 'false' කරන්න
+        { new: true, runValidators: false }
     );
     if (!updatedDoctor) return next(new APIError(404, 'Doctor not found'));
     return res.status(200).json(updatedDoctor);

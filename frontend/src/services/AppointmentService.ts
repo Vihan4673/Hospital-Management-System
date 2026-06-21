@@ -3,7 +3,6 @@ import apiClient from "./apiClient";
 
 // 1. GET ALL ACTIVE APPOINTMENTS (WAITING / NOT COMPLETED)
 export const getActiveAppointments = async (): Promise<Appointment[]> => {
-  // ⚠️ Backend එකේ route එක '/appointments/active' ම දැයි නැවත පරීක්ෂා කරන්න.
   const response = await apiClient.get("/appointments/active");
   return response.data;
 };
@@ -20,25 +19,24 @@ export const getAppointmentHistoryByPatient = async (patientId: string): Promise
   return response.data;
 };
 
-// 4. CREATE A NEW APPOINTMENT (Added roomNumber)
+// 4. CREATE A NEW APPOINTMENT (Fixed: Added roomNumber properly)
 export const createAppointment = async (
     doctorId: string,
     patientId: string,
     appointmentDate: string,
-    roomNumber?: string // 💡 කාමර අංකය Backend එකට යැවීමට එකතු කළා
+    roomNumber: string
 ): Promise<Appointment> => {
   const response = await apiClient.post("/appointments", {
     doctor: doctorId,
     patient: patientId,
     appointmentDate,
-    roomNumber // 💡 Backend එකෙන් roomNumber එක බලාපොරොත්තු වේ නම් මෙය අවශ්‍ය වේ
+    roomNumber
   });
   return response.data;
 };
 
 // 5. MARK APPOINTMENT AS COMPLETED
 export const completeAppointment = async (appointmentId: string): Promise<Appointment> => {
-  // ⚠️ Backend එකේ route එක '/appointments/complete/:id' ද නැතහොත් '/appointments/:id/complete' ද කියා පරීක්ෂා කරන්න.
   const response = await apiClient.put(`/appointments/complete/${appointmentId}`);
   return response.data;
 };

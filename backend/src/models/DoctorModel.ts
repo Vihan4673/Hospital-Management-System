@@ -1,17 +1,19 @@
 import mongoose, { Schema } from "mongoose";
 
 export type Doctor = {
+    _id?: string;
     doctorId: string;
     name: string;
     email: string;
     phone: string;
     specialty: string;
+    roomNumber: string;
     channellingPrice: number;
     availableDays: string[];
     startTime: string;
     endTime: string;
-    createdAt: Date;
-    updatedAt: Date;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 const DoctorSchema: Schema = new Schema<Doctor>(
@@ -40,6 +42,11 @@ const DoctorSchema: Schema = new Schema<Doctor>(
             trim: true,
         },
         specialty: {
+            type: String,
+            required: true,
+            trim: true,
+        },
+        roomNumber: {
             type: String,
             required: true,
             trim: true,

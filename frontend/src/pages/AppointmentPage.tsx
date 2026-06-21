@@ -12,8 +12,15 @@ import type { Appointment } from "../types/Appointment";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { showConfirmation } from "../components/ConfirmationToast";
-import { CalendarCheck, Search } from "lucide-react";
+import { CalendarCheck, Search, User, UserCheck, Stethoscope } from "lucide-react";
 import AppointmentTable from "../components/tables/AppointmentTable";
+
+interface ClinicSlot {
+    dateString: string;
+    dayName: string;
+    display: string;
+    doctor: Doctor;
+}
 
 const AppointmentPage: React.FC = () => {
     const [doctors, setDoctors] = useState<Doctor[]>([]);
@@ -23,7 +30,9 @@ const AppointmentPage: React.FC = () => {
 
     const [specialties, setSpecialties] = useState<string[]>([]);
     const [selectedSpecialty, setSelectedSpecialty] = useState<string>("");
-    const [selectedDayName, setSelectedDayName] = useState<string>("");
+
+    const [availableDates, setAvailableDates] = useState<ClinicSlot[]>([]);
+    const [selectedDate, setSelectedDate] = useState<string>("");
 
     const [patientDetails, setPatientDetails] = useState({
         _id: "",
@@ -33,12 +42,13 @@ const AppointmentPage: React.FC = () => {
     });
 
     const [doctorDetails, setDoctorDetails] = useState({
+        _id: "",
         doctorId: "",
         name: "",
-        roomNumber: "", // මෙය ඩොක්ටර්ව සිලෙක්ට් කරද්දී auto-fill වෙනවා වගේම වෙනස් කරන්නත් පුළුවන්
+        roomNumber: "",
+        timeSlot: ""
     });
 
-    const [appointmentDate, setAppointmentDate] = useState("");
     const [showAppointmentForm, setShowAppointmentForm] = useState(false);
     const [search, setSearch] = useState("");
 
@@ -48,7 +58,7 @@ const AppointmentPage: React.FC = () => {
             setDoctors(result);
 
             const uniqueSpecialties = Array.from(
-                new Set(result.map((doc) => doc.specialty).filter(Boolean))
+                new Set(result.map((doc) => doc.specialty?.trim()).filter(Boolean))
             );
             setSpecialties(uniqueSpecialties);
         } catch (error) {
@@ -92,54 +102,130 @@ const AppointmentPage: React.FC = () => {
         fetchActiveAppointments();
     }, []);
 
-    const handleDateChange = (dateValue: string) => {
-        setAppointmentDate(dateValue);
-        if (!dateValue) {
-            setSelectedDayName("");
-            return;
+    const generateSlotsForDoctor = (doctor: Doctor): ClinicSlot[] => {
+        const slots: ClinicSlot[] = [];
+        const today = new Date();
+        const lowerCaseDays = doctor.availableDays?.map(d => d.toLowerCase().trim()) || [];
+
+        for (let i = 0; i < 14; i++) {
+            const futureDate = new Date(today);
+            futureDate.setDate(today.getDate() + i);
+
+            const dayName = new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(futureDate);
+
+            if (lowerCaseDays.includes(dayName.toLowerCase())) {
+                const year = futureDate.getFullYear();
+                const month = String(futureDate.getMonth() + 1).padStart(2, '0');
+                const date = String(futureDate.getDate()).padStart(2, '0');
+                const formattedDate = `${year}-${month}-${date}`;
+
+                slots.push({
+                    dateString: formattedDate,
+                    dayName: dayName,
+                    display: `${formattedDate} (${dayName})`,
+                    doctor: doctor
+                });
+            }
         }
-
-        const date = new Date(dateValue);
-        const dayName = new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(date);
-        setSelectedDayName(dayName);
-
-        // දවස වෙනස් කරද්දී කලින් තෝරලා තිබ්බ ඩොක්ටර්ව reset කරනවා
-        setDoctorDetails({ doctorId: "", name: "", roomNumber: "" });
+        return slots;
     };
 
     const handleSpecialtyChange = (specialty: string) => {
         setSelectedSpecialty(specialty);
-        setDoctorDetails({ doctorId: "", name: "", roomNumber: "" });
+        setSelectedDate("");
+        setDoctorDetails({ _id: "", doctorId: "", name: "", roomNumber: "", timeSlot: "" });
+
+        if (!specialty) {
+            setAvailableDates([]);
+            return;
+        }
+
+        const filteredDocs = doctors.filter(doc => {
+            const isDoctorActive = doc.isActive !== false;
+            const matchSpecialty = doc.specialty?.toLowerCase().trim() === specialty.toLowerCase().trim();
+            return isDoctorActive && matchSpecialty;
+        });
+
+        let combinedSlots: ClinicSlot[] = [];
+        filteredDocs.forEach(doc => {
+            const doctorSlots = generateSlotsForDoctor(doc);
+            combinedSlots = [...combinedSlots, ...doctorSlots];
+        });
+
+        combinedSlots.sort((a, b) => new Date(a.dateString).getTime() - new Date(b.dateString).getTime());
+
+        const uniqueSlots: ClinicSlot[] = [];
+        const seenDates = new Set();
+
+        combinedSlots.forEach(slot => {
+            if (!seenDates.has(slot.dateString)) {
+                seenDates.add(slot.dateString);
+                uniqueSlots.push(slot);
+            }
+        });
+
+        setAvailableDates(uniqueSlots);
+
+        if (uniqueSlots.length === 0) {
+            toast.error("No active doctor schedules found for this specialty!");
+        }
     };
 
-    // Specialty එක සහ තෝරාගත් දවස (Day) අනුව Doctorsලා Filter කිරීමේ Logic එක
-    const filteredDoctors = doctors.filter((doc) => {
-        if (!doc.isActive) return false;
+    const handleDateChange = (dateStr: string) => {
+        setSelectedDate(dateStr);
 
-        const matchesSpecialty = selectedSpecialty ? doc.specialty === selectedSpecialty : true;
+        if (!dateStr) {
+            setDoctorDetails({ _id: "", doctorId: "", name: "", roomNumber: "", timeSlot: "" });
+            return;
+        }
 
-        const matchesDay = selectedDayName
-            ? doc.availableDays?.some(day => day.toLowerCase() === selectedDayName.toLowerCase())
-            : true;
+        const foundSlot = availableDates.find(s => s.dateString === dateStr);
+        if (foundSlot) {
+            const formatTime = (timeStr?: string) => {
+                if (!timeStr) return "";
+                const [hours, minutes] = timeStr.split(":");
+                const h = parseInt(hours, 10);
+                const ampm = h >= 12 ? "PM" : "AM";
+                const formattedHours = h % 12 || 12;
+                return `${formattedHours}:${minutes} ${ampm}`;
+            };
 
-        return matchesSpecialty && matchesDay;
-    });
+            const timeRange = foundSlot.doctor.startTime && foundSlot.doctor.endTime
+                ? `${formatTime(foundSlot.doctor.startTime)} - ${formatTime(foundSlot.doctor.endTime)}`
+                : "Not Set";
+
+            setDoctorDetails({
+                _id: foundSlot.doctor._id || "",
+                doctorId: foundSlot.doctor.doctorId || "",
+                name: foundSlot.doctor.name,
+                roomNumber: foundSlot.doctor.roomNumber || "Not Assigned",
+                timeSlot: timeRange
+            });
+            toast.success(`Assigned: Dr. ${foundSlot.doctor.name}`);
+        }
+    };
 
     const handleCreateAppointment = async () => {
-        if (!doctorDetails.doctorId || !patientDetails._id || !appointmentDate) {
-            toast.error("Please fill all required details");
+        const targetDoctorId = doctorDetails._id || doctorDetails.doctorId;
+
+        if (!targetDoctorId || !patientDetails._id || !selectedDate || !doctorDetails.roomNumber) {
+            toast.error("Please fill all required details!");
             return;
         }
         setLoading(true);
         try {
-            // සටහන: ඔබේ backend එකෙන් roomNumber එක ගන්නවා නම් doctorDetails.roomNumber එක මෙතනින් pass කරන්න පුළුවන්
-            await createAppointment(doctorDetails.doctorId, patientDetails._id, appointmentDate);
+            await createAppointment(
+                targetDoctorId,
+                patientDetails._id,
+                selectedDate,
+                doctorDetails.roomNumber
+            );
 
             setPatientDetails({ _id: "", mobile: "", name: "", patientId: "" });
-            setDoctorDetails({ doctorId: "", name: "", roomNumber: "" });
-            setAppointmentDate("");
+            setDoctorDetails({ _id: "", doctorId: "", name: "", roomNumber: "", timeSlot: "" });
+            setSelectedDate("");
             setSelectedSpecialty("");
-            setSelectedDayName("");
+            setAvailableDates([]);
             await fetchActiveAppointments();
             toast.success("Appointment created successfully!");
             setShowAppointmentForm(false);
@@ -173,54 +259,66 @@ const AppointmentPage: React.FC = () => {
     };
 
     return (
-        <div className="h-full overflow-y-auto px-4 py-6 text-slate-800">
-            <div className="flex gap-2 items-center justify-center mb-6">
-                <CalendarCheck className="w-8 h-8 text-blue-600" />
-                <h1 className="text-2xl font-bold text-blue-900">APPOINTMENT MANAGEMENT</h1>
+        <div className="w-full max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 text-slate-800 antialiased selection:bg-blue-500 selection:text-white">
+
+            {/* Header section with badge */}
+            <div className="flex flex-col items-center justify-center mb-8 text-center">
+                <div className="p-3 bg-blue-50 rounded-2xl text-blue-600 mb-3 shadow-sm border border-blue-100">
+                    <CalendarCheck className="w-8 h-8" />
+                </div>
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-wide text-slate-900 uppercase">
+                    Appointment Management
+                </h1>
+                <p className="text-sm text-slate-500 mt-1">Manage and channel patients with real-time doctor availability</p>
             </div>
 
-            {/* Search Bar & Toggle Button */}
-            <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-end mb-6 gap-4">
-                <div className="flex-1">
-                    <label htmlFor="search" className="text-slate-700 font-medium mb-1 block">
-                        Search Appointments
-                    </label>
-                    <div className="relative">
-                        <input
-                            id="search"
-                            type="text"
-                            placeholder="Search by Patient Name, Doctor, or ID..."
-                            className="border border-neutral-300 p-2 pr-10 rounded-lg w-full focus:ring-1 focus:ring-blue-400 focus:border-blue-500 outline-none transition"
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
-                        <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    </div>
+            {/* Actions Bar */}
+            <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 mb-6">
+                <div className="relative flex-1 max-w-xl">
+                    <input
+                        id="search"
+                        type="text"
+                        placeholder="Search by Patient Name, Doctor, or ID..."
+                        className="border border-slate-200 pl-11 pr-4 py-2.5 rounded-xl w-full text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition bg-slate-50/50 hover:bg-slate-50 focus:bg-white"
+                        onChange={(e) => setSearch(e.target.value)}
+                    />
+                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
                 </div>
 
                 <button
-                    className="bg-blue-600 hover:bg-blue-500 text-white font-medium px-4 py-2 rounded-lg transition"
+                    className={`font-semibold text-sm px-5 py-2.5 rounded-xl transition shadow-sm flex items-center justify-center gap-2 ${
+                        showAppointmentForm
+                            ? "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                            : "bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md"
+                    }`}
                     onClick={() => setShowAppointmentForm(!showAppointmentForm)}
                 >
                     {showAppointmentForm ? "Hide Form" : "Add New Appointment"}
                 </button>
             </div>
 
+            {/* Appointment Form */}
             {showAppointmentForm && (
-                <div className="bg-white border p-6 rounded-xl shadow-sm space-y-6 mb-6 animate-fade-in">
+                <div className="bg-white border border-slate-100 rounded-2xl shadow-md p-5 md:p-6 space-y-6 mb-8 transition-all duration-300 ease-in-out">
+
                     {/* Patient Details Section */}
-                    <div>
-                        <h2 className="text-md font-bold text-blue-800 mb-3 border-b pb-1">Patient Details</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100">
+                        <div className="flex items-center gap-2 mb-4 text-blue-900">
+                            <User className="w-4 h-4 text-blue-600" />
+                            <h2 className="text-sm font-bold tracking-wide uppercase">Patient Details</h2>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                             <div>
-                                <label className="block mb-1 text-sm font-medium">Mobile No</label>
+                                <label className="block mb-1.5 text-xs font-semibold text-slate-600">Mobile No</label>
                                 <input
                                     type="text"
-                                    className="w-full border px-3 py-2 rounded-lg bg-slate-50 focus:border-blue-500 outline-none"
-                                    placeholder="Enter mobile number"
+                                    className="w-full border border-slate-200 px-3 py-2 text-sm rounded-lg bg-white shadow-inner focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                                    placeholder="Enter 10-digit mobile"
                                     value={patientDetails.mobile}
                                     onChange={(e) => {
                                         const mobile = e.target.value;
                                         setPatientDetails({ ...patientDetails, mobile });
+
                                         if (mobile.length >= 10) {
                                             const foundPatient = patients.find((p) => p.phone === mobile);
                                             if (foundPatient) {
@@ -230,145 +328,131 @@ const AppointmentPage: React.FC = () => {
                                                     name: foundPatient.name,
                                                     patientId: foundPatient.patientId,
                                                 });
+                                                toast.success(`Patient found: ${foundPatient.name}`);
+                                            } else {
+                                                toast.error("No patient found with this mobile number");
                                             }
                                         }
                                     }}
                                 />
                             </div>
                             <div>
-                                <label className="block mb-1 text-sm font-medium">Patient Name</label>
-                                <input
-                                    type="text"
-                                    className="w-full border px-3 py-2 rounded-lg bg-slate-50 focus:border-blue-500 outline-none"
-                                    placeholder="Search Patient Name"
-                                    value={patientDetails.name}
-                                    onChange={(e) => {
-                                        const name = e.target.value;
-                                        setPatientDetails({ ...patientDetails, name });
-                                        if (name.length >= 3) {
-                                            const foundPatient = patients.find((p) =>
-                                                p.name.toLowerCase().includes(name.toLowerCase())
-                                            );
-                                            if (foundPatient) {
-                                                setPatientDetails({
-                                                    _id: foundPatient._id || "",
-                                                    mobile: foundPatient.phone,
-                                                    name: foundPatient.name,
-                                                    patientId: foundPatient.patientId,
-                                                });
-                                            }
-                                        }
-                                    }}
-                                />
+                                <label className="block mb-1.5 text-xs font-semibold text-slate-600">Patient Name</label>
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        className="w-full border border-slate-200 px-3 py-2 text-sm rounded-lg bg-slate-100 text-slate-700 font-medium outline-none"
+                                        placeholder="Patient Name"
+                                        value={patientDetails.name}
+                                        readOnly
+                                    />
+                                    {patientDetails.name && <UserCheck className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-600" />}
+                                </div>
                             </div>
-                            <div>
-                                <label className="block mb-1 text-sm font-medium">Patient ID</label>
+                            <div className="sm:col-span-2 md:col-span-1">
+                                <label className="block mb-1.5 text-xs font-semibold text-slate-600">Patient ID</label>
                                 <input
                                     type="text"
-                                    className="w-full border px-3 py-2 rounded-lg bg-slate-50 focus:border-blue-500 outline-none"
+                                    className="w-full border border-slate-200 px-3 py-2 text-sm rounded-lg bg-slate-100 text-slate-700 font-medium outline-none"
                                     placeholder="Patient ID"
                                     value={patientDetails.patientId}
-                                    onChange={(e) => {
-                                        const patientId = e.target.value;
-                                        setPatientDetails({ ...patientDetails, patientId });
-                                        const foundPatient = patients.find((p) => p.patientId === patientId);
-                                        if (foundPatient) {
-                                            setPatientDetails({
-                                                _id: foundPatient._id || "",
-                                                mobile: foundPatient.phone,
-                                                name: foundPatient.name,
-                                                patientId: foundPatient.patientId,
-                                            });
-                                        }
-                                    }}
+                                    readOnly
                                 />
                             </div>
                         </div>
                     </div>
 
                     {/* Doctor & Schedule Details Section */}
-                    <div>
-                        <h2 className="text-md font-bold text-blue-800 mb-3 border-b pb-1">Doctor & Schedule Details</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100">
+                        <div className="flex items-center gap-2 mb-4 text-blue-900">
+                            <Stethoscope className="w-4 h-4 text-blue-600" />
+                            <h2 className="text-sm font-bold tracking-wide uppercase">Doctor & Schedule Details</h2>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
 
-                            {/* SELECT SPECIALTY DROPDOWN */}
+                            {/* 1. SELECT SPECIALTY */}
                             <div>
-                                <label className="block mb-1 text-sm font-medium">Select Specialty</label>
+                                <label className="block mb-1.5 text-xs font-semibold text-slate-600">Select Specialty</label>
                                 <select
-                                    className="w-full border px-3 py-2 rounded-lg bg-slate-50 focus:border-blue-500 outline-none cursor-pointer"
+                                    className="w-full border border-slate-200 px-3 py-2 text-sm rounded-lg bg-white focus:border-blue-500 outline-none cursor-pointer transition shadow-sm"
                                     value={selectedSpecialty}
                                     onChange={(e) => handleSpecialtyChange(e.target.value)}
                                 >
-                                    <option value="">-- All Specialties --</option>
+                                    <option value="">-- Specialty --</option>
                                     {specialties.map((spec) => (
                                         <option key={spec} value={spec}>{spec}</option>
                                     ))}
                                 </select>
                             </div>
 
-                            {/* APPOINTMENT DATE */}
+                            {/* 2. SELECT DATE */}
                             <div>
-                                <label className="block mb-1 text-sm font-medium">
-                                    Appointment Date & Time {selectedDayName && <span className="text-blue-600 font-bold">({selectedDayName})</span>}
-                                </label>
-                                <input
-                                    type="datetime-local"
-                                    className="w-full border px-3 py-2 rounded-lg bg-slate-50 focus:border-blue-500 outline-none"
-                                    value={appointmentDate}
-                                    onChange={(e) => handleDateChange(e.target.value)}
-                                />
-                            </div>
-
-                            {/* SELECT DOCTOR DROPDOWN (FILTERED BY SPECIALTY & DAY) */}
-                            <div>
-                                <label className="block mb-1 text-sm font-medium">Select Doctor</label>
+                                <label className="block mb-1.5 text-xs font-semibold text-slate-600">Select Available Date</label>
                                 <select
-                                    className="w-full border px-3 py-2 rounded-lg bg-slate-50 focus:border-blue-500 outline-none cursor-pointer disabled:bg-slate-100 disabled:cursor-not-allowed"
-                                    value={doctorDetails.name}
-                                    onChange={(e) => {
-                                        const name = e.target.value;
-                                        const foundDoctor = doctors.find((d) => d.name === name);
-                                        if (foundDoctor) {
-                                            setDoctorDetails({
-                                                doctorId: foundDoctor.doctorId,
-                                                name: foundDoctor.name,
-                                                roomNumber: foundDoctor.roomNumber || "",
-                                            });
-                                        } else {
-                                            setDoctorDetails({ doctorId: "", name: "", roomNumber: "" });
-                                        }
-                                    }}
+                                    className="w-full border border-slate-200 px-3 py-2 text-sm rounded-lg bg-white focus:border-blue-500 outline-none cursor-pointer transition shadow-sm disabled:bg-slate-100 disabled:cursor-not-allowed text-xs sm:text-sm"
+                                    value={selectedDate}
+                                    onChange={(e) => handleDateChange(e.target.value)}
+                                    disabled={!selectedSpecialty}
                                 >
                                     <option value="">
-                                        {filteredDoctors.length === 0 ? "-- No Doctors Available --" : "-- Select Doctor --"}
+                                        {!selectedSpecialty
+                                            ? "-- Select Specialty First --"
+                                            : availableDates.length === 0
+                                                ? "-- No Available Dates --"
+                                                : "-- Select Date --"
+                                        }
                                     </option>
-                                    {filteredDoctors.map((doc) => (
-                                        <option key={doc.doctorId} value={doc.name}>
-                                            {doc.name} ({doc.specialty})
+                                    {availableDates.map((slot, index) => (
+                                        <option key={index} value={slot.dateString}>
+                                            {slot.display}
                                         </option>
                                     ))}
                                 </select>
                             </div>
 
-                            {/* CHANGED: ASSIGNED ROOM FIELD IS NOW EDITABLE (නවතම වෙනස්කම) */}
+                            {/* 3. ASSIGNED DOCTOR (AUTO-FILLED) */}
                             <div>
-                                <label className="block mb-1 text-sm font-medium">Assigned Room</label>
+                                <label className="block mb-1.5 text-xs font-semibold text-slate-600">Assigned Doctor</label>
                                 <input
                                     type="text"
-                                    className="w-full border px-3 py-2 rounded-lg bg-slate-50 focus:border-blue-500 outline-none"
-                                    placeholder="Enter or edit room number"
+                                    className="w-full border border-slate-200 px-3 py-2 text-sm rounded-lg bg-slate-100 font-bold text-slate-800 outline-none"
+                                    placeholder="Auto-filled Doctor"
+                                    value={doctorDetails.name ? `Dr. ${doctorDetails.name}` : ""}
+                                    readOnly
+                                />
+                            </div>
+
+                            {/* 4. CLINIC TIME (AUTO-FILLED) */}
+                            <div>
+                                <label className="block mb-1.5 text-xs font-semibold text-slate-600">Available Time</label>
+                                <input
+                                    type="text"
+                                    className="w-full border border-slate-200 px-3 py-2 text-sm rounded-lg bg-slate-100 font-bold text-emerald-700 outline-none"
+                                    placeholder="Auto-filled Time"
+                                    value={doctorDetails.timeSlot}
+                                    readOnly
+                                />
+                            </div>
+
+                            {/* 5. ASSIGNED ROOM (AUTO-FILLED) */}
+                            <div className="sm:col-span-2 lg:col-span-1">
+                                <label className="block mb-1.5 text-xs font-semibold text-slate-600">Assigned Room</label>
+                                <input
+                                    type="text"
+                                    className="w-full border border-slate-200 px-3 py-2 text-sm rounded-lg bg-slate-100 font-bold text-slate-800 outline-none"
+                                    placeholder="Room Number"
                                     value={doctorDetails.roomNumber}
-                                    onChange={(e) => setDoctorDetails({ ...doctorDetails, roomNumber: e.target.value })}
+                                    readOnly
                                 />
                             </div>
                         </div>
                     </div>
 
-                    <div className="flex justify-end pt-2">
+                    <div className="flex justify-end pt-2 border-t border-slate-100">
                         <button
                             onClick={handleCreateAppointment}
-                            className="bg-blue-600 hover:bg-blue-500 text-white font-medium px-5 py-2 rounded-full transition disabled:opacity-50"
-                            disabled={!patientDetails._id || !doctorDetails.doctorId || !appointmentDate || loading}
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-6 py-2.5 rounded-xl transition shadow-md disabled:opacity-50 disabled:pointer-events-none w-full sm:w-auto"
+                            disabled={!patientDetails._id || (!doctorDetails._id && !doctorDetails.doctorId) || !selectedDate || !doctorDetails.roomNumber || loading}
                         >
                             {loading ? "Creating..." : "Confirm Appointment"}
                         </button>
@@ -376,15 +460,26 @@ const AppointmentPage: React.FC = () => {
                 </div>
             )}
 
-            {/* Active Appointments Table */}
-            <h2 className="text-xl font-bold mt-8 mb-4 text-slate-700">Active Appointment Queue</h2>
+            {/* Table Header Wrapper */}
+            <div className="mt-4 mb-4 flex items-center justify-between">
+                <h2 className="text-lg font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
+                    <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Active Appointment Queue
+                </h2>
+                <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md">
+                    Total: {activeAppointments.length}
+                </span>
+            </div>
 
-            <div className="overflow-x-auto rounded-xl border shadow-sm bg-white">
-                <AppointmentTable
-                    activeAppointments={activeAppointments}
-                    search={search}
-                    onComplete={handleCompleteAppointment}
-                />
+            {/* 💡 Table Responsive Wrapper - Scroll smoothly horizontally if needed on Mobile */}
+            <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 shadow-sm bg-white scrollbar-thin scrollbar-thumb-slate-200">
+                <div className="min-w-[800px] md:min-w-full">
+                    <AppointmentTable
+                        activeAppointments={activeAppointments}
+                        search={search}
+                        onComplete={handleCompleteAppointment}
+                    />
+                </div>
             </div>
         </div>
     );

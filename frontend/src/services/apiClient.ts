@@ -18,21 +18,40 @@ export const setHeader = (token: string | null) => {
     }
 };
 
+apiClient.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem("accessToken") || localStorage.getItem("token");
+        if (token && !config.headers["Authorization"]) {
+            config.headers["Authorization"] = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
+
 apiClient.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config;
-        if (error.response?.status === 403 && !originalRequest._retry) {
+
+        if ((error.response?.status === 401 || error.response?.status === 403) && !originalRequest._retry) {
             originalRequest._retry = true;
             try {
                 const res = await apiClient.post("/auth/refresh-token");
                 const newAccessToken = res.data.accessToken;
+
+                localStorage.setItem("accessToken", newAccessToken);
                 setHeader(newAccessToken);
+
                 originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
                 return apiClient(originalRequest);
             } catch (refreshError) {
                 if (refreshError instanceof AxiosError) {
-                    if (refreshError.response?.status === 401) {
+                    if (refreshError.response?.status === 401 || refreshError.response?.status === 403) {
+                        localStorage.removeItem("accessToken");
+                        localStorage.removeItem("token");
                         window.location.href = "/";
                     }
                 }

@@ -3,11 +3,15 @@ import type { Patient } from "./Patient.ts";
 
 export type Appointment = {
   _id: string;
-  doctor: Doctor | string;
-  patient: Patient | string;
+
+  doctor: Doctor;
+
+  patient: Patient;
+
   appointmentDate: string;
-  roomNumber?: string;
+  roomNumber: string;
   notes?: string | null;
-  isCompleted: boolean;
   status: 'pending' | 'completed' | 'cancelled';
+  createdAt?: string;
+  updatedAt?: string;
 };

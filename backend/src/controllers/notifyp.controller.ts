@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { LendingModel } from '../models/Appointment';
+import { AppointmentModel } from '../models/Appointment';
 import { sendEmail } from '../utils/mailer';
 import { APIError } from '../errors/APIError';
 import { Patient } from '../models/Patient';
@@ -9,56 +9,62 @@ export const notifyOverdueReaders = async (req: Request, res: Response, next: Ne
     try {
         const today = new Date();
 
-        const overdueLendings = await LendingModel.find({
+        const overdueLendings = await AppointmentModel.find({
             dueDate: { $lt: today },
             returned: false,
         }).populate('reader').populate('book');
 
         const grouped: Record<string, { reader: any; books: any[] }> = {};
 
-        overdueLendings.forEach(lending => {
-            const reader = lending.reader as Patient;
-            const book = lending.book as DoctorModel;
+        overdueLendings.forEach((lending: any) => {
+            const reader = lending.reader as any;
+            const book = lending.book as any;
 
-            if (!grouped[reader.readerId]) {
-                grouped[reader.readerId] = { reader, books: [] };
+            if (!reader) return;
+
+            const patientId = reader._id || reader.patientId;
+
+            if (!grouped[patientId]) {
+                grouped[patientId] = { reader, books: [] };
             }
-            grouped[reader.readerId].books.push({
-                title: book.title,
-                dueDate: lending.dueDate.toDateString(),
+
+            grouped[patientId].books.push({
+                title: book?.name || book?.title || 'Appointment/Doctor',
+                dueDate: lending.dueDate ? new Date(lending.dueDate).toDateString() : today.toDateString(),
             });
         });
 
-        // Send emails
-        for (const readerId in grouped) {
-            const { reader, books } = grouped[readerId];
+        for (const patientId in grouped) {
+            const { reader, books } = grouped[patientId];
+
+            if (!reader || !reader.email) continue;
 
             const bookList = books
                 .map(book => `
                     <li>
                         <strong>${book.title}</strong> 
-                        — <span style="color: red;">Due: ${new Date(book.dueDate).toLocaleDateString()}</span>
+                        — <span style="color: red;">Due Date: ${new Date(book.dueDate).toLocaleDateString()}</span>
                     </li>
-                    `)
-                                .join('');
+                `)
+                .join('');
 
-                            const message = `
-                    <div style="font-family: Arial, sans-serif; font-size: 14px; color: #333;">
-                    <p><strong>Dear ${reader.name},</strong></p>
+            const message = `
+                <div style="font-family: Arial, sans-serif; font-size: 14px; color: #333;">
+                <p><strong>Dear ${reader.name || 'Patient'},</strong></p>
 
-                    <p>You have the following overdue books:</p>
-                    
-                    <ul style="padding-left: 20px;">
-                        ${bookList}
-                    </ul>
+                <p>This is a reminder that you have an overdue or pending schedule/appointment detail:</p>
+                
+                <ul style="padding-left: 20px;">
+                    ${bookList}
+                </ul>
 
-                    <p>Please return them as soon as possible to avoid penalties.</p>
+                <p>Please attend or contact the hospital management as soon as possible.</p>
 
-                    <p>Thank you,<br/> BOOK CLUB Library Management System</p>
-                    </div>
-                `;
+                <p>Thank you,<br/> Hospital Management System</p>
+                </div>
+            `;
 
-            await sendEmail(reader.email, '📚 Overdue DoctorModel Notification', message);
+            await sendEmail(reader.email, '⚠️ Overdue Notification', message);
         }
 
         res.status(200).json({ message: 'Email notifications sent successfully.' });
@@ -69,7 +75,7 @@ export const notifyOverdueReaders = async (req: Request, res: Response, next: Ne
 
 export const testmail = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await sendEmail('sherul.dhanushka@gmail.com', 'Bookclub', 'This is a test mail from DoctorModel Club Library System 📚');
+        await sendEmail('sherul.dhanushka@gmail.com', 'Hospital Management', 'This is a test mail from Hospital Management System 🏥');
         res.status(200).json({ message: 'Test email sent successfully!' });
     } catch (error: any) {
         next(new APIError(500, "Failed to send test email", error.message));

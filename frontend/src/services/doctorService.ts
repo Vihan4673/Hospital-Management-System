@@ -7,14 +7,15 @@ export const getAllDoctors = async (): Promise<Doctor[]> => {
 };
 
 export const deleteDoctor = async (id: string): Promise<void> => {
-    const response = await apiClient.delete(`/doctor/${id}`);
-    return response.data;
+    await apiClient.delete(`/doctor/${id}`);
 };
 
 export const addDoctor = async (
     doctorData: Omit<Doctor, "createdAt" | "updatedAt">
 ): Promise<Doctor> => {
-    const response = await apiClient.post("/doctor", doctorData);
+    const { _id, ...cleanData } = doctorData;
+
+    const response = await apiClient.post("/doctor", cleanData);
     return response.data;
 };
 
@@ -22,6 +23,8 @@ export const updateDoctor = async (
     id: string,
     doctorData: Omit<Doctor, "createdAt" | "updatedAt">
 ): Promise<Doctor> => {
-    const response = await apiClient.put(`/doctor/${id}`, doctorData);
+    const { _id, ...cleanData } = doctorData;
+
+    const response = await apiClient.put(`/doctor/${id}`, cleanData);
     return response.data;
 };
