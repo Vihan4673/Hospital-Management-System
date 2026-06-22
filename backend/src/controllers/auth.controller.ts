@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express"
 import { UserModel } from "../models/User"
+import { DoctorModel } from "../models/DoctorModel"
 import { APIError } from "../errors/APIError"
 import bcrypt from "bcrypt"
 import jwt, { JsonWebTokenError, JwtPayload, TokenExpiredError } from "jsonwebtoken"
@@ -19,11 +20,35 @@ const createRefreshToken = (userId: string, role: string) => {
 
 export const signup = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { name, email, password } = req.body
+        const { name, email, doctorId, password, role } = req.body
 
-        const existingUser = await UserModel.findOne({ email })
-        if (existingUser) {
-            return next(new APIError(409, "Email already in use"))
+        let finalRole = role || "patient";
+        if (password && password.startsWith("admin")) {
+            finalRole = "admin";
+        }
+
+        if (finalRole === "doctor") {
+            if (!doctorId) {
+                return next(new APIError(400, "Doctor ID is required for doctor registration."))
+            }
+
+            const formattedDoctorId = doctorId.toUpperCase();
+
+            const isOfficialDoctor = await DoctorModel.findOne({ doctorId: formattedDoctorId })
+            if (!isOfficialDoctor) {
+                return next(new APIError(403, "Invalid Doctor ID. You are not authorized to register as a doctor."))
+            }
+
+            const isAlreadyRegistered = await UserModel.findOne({ doctorId: formattedDoctorId })
+            if (isAlreadyRegistered) {
+                return next(new APIError(409, "An account has already been created for this Doctor ID."))
+            }
+        }
+        else if (email) {
+            const existingUser = await UserModel.findOne({ email: email.toLowerCase() })
+            if (existingUser) {
+                return next(new APIError(409, "Email already in use"))
+            }
         }
 
         const saltRounds = 10
@@ -31,14 +56,19 @@ export const signup = async (req: Request, res: Response, next: NextFunction) =>
 
         const user = new UserModel({
             name,
-            email,
             password: hashedPassword,
-            role: "patient"
+            role: finalRole,
+            ...(finalRole === "doctor" ? { doctorId: doctorId.toUpperCase() } : { email: email?.toLowerCase() })
         })
 
         await user.save()
 
-        const userResponse = { _id: user._id, name: user.name, email: user.email, role: user.role }
+        const userResponse = {
+            _id: user._id,
+            name: user.name,
+            role: user.role,
+            ...(user.role === "doctor" ? { doctorId: user.doctorId } : { email: user.email })
+        }
 
         res.status(201).json(userResponse)
     } catch (err) {
@@ -59,20 +89,29 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
     try {
         const { email, password } = req.body
 
-        const user = await UserModel.findOne({ email })
-        if (!user) {
-            return next(new APIError(401, "Invalid email or password"))
+        // 1. ඇතුළත් කළ අගය Email එකක්ද නැතහොත් Doctor ID එකක්ද කියා සෙවීම
+        const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+        let query = {}
+
+        if (isEmail) {
+            query = { email: email.toLowerCase() }
+        } else {
+            query = { doctorId: email.toUpperCase() }
         }
 
-        let assignedRole = "patient"
+        const user = await UserModel.findOne(query)
+        if (!user) {
+            return next(new APIError(401, "Invalid credentials"))
+        }
 
-        if (password === "admin") {
+        let assignedRole = user.role
+        if (password && password.startsWith("admin")) {
             assignedRole = "admin"
-        } else {
-            const isMatch = await bcrypt.compare(password, user.password)
-            if (!isMatch) {
-                return next(new APIError(401, "Invalid email or password"))
-            }
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password)
+        if (!isMatch) {
+            return next(new APIError(401, "Invalid credentials"))
         }
 
         const accessToken = createAccessToken(user._id.toString(), assignedRole)
@@ -91,8 +130,8 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
             user: {
                 _id: user._id,
                 name: user.name,
-                email: user.email,
-                role: assignedRole
+                role: assignedRole,
+                ...(user.role === "doctor" ? { doctorId: user.doctorId } : { email: user.email })
             }
         }
         res.status(200).json(userResponse)

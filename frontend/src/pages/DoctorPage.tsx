@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Stethoscope, Search } from "lucide-react";
+import { Stethoscope, Search, Plus } from "lucide-react";
 import type { Doctor } from "../types/Doctor";
 import DoctorTable from "../components/tables/DoctorTable";
 import DoctorForm from "../components/forms/DoctorForm";
@@ -95,7 +95,7 @@ const DoctorsPage = () => {
               )
           );
           toast.success("Doctor details updated successfully");
-          setShowPopup(false); // 💡 සාර්ථකව update වුණොත් විතරක් popup එක වහන්න
+          setShowPopup(false);
         } catch (error) {
           if (axios.isAxiosError(error)) {
             const errorMsg = error.response?.data?.message || error.message;
@@ -125,64 +125,76 @@ const DoctorsPage = () => {
   };
 
   return (
-      <div className="h-full overflow-y-auto px-4 py-6 bg-slate-50/50">
-        <h1 className="text-3xl font-bold mb-4 text-center text-teal-800 flex items-center justify-center gap-2 tracking-wide">
-          <Stethoscope className="w-8 h-8 text-teal-600 animate-pulse" />
-          DOCTORS REGISTRY
-        </h1>
+      <div className="h-full px-1 py-2 bg-transparent text-slate-800 animate-fade-in">
 
-        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-end mb-4 gap-4">
-          <div className="flex-1">
-            <label htmlFor="search" className="text-slate-700 font-medium mb-1 text-sm block">
-              Search Registry
-            </label>
-            <div className="relative">
-              <input
-                  id="search"
-                  type="text"
-                  placeholder="Search by name, specialization, or ID..."
-                  className="border border-slate-300 p-2.5 pr-10 rounded-lg w-full bg-white hover:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition shadow-sm text-sm"
-                  onChange={(e) => setSearch(e.target.value)}
-              />
-              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
-            </div>
+        {/* Title Block - Matching Dashboard style */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 border-b border-slate-200 pb-4 gap-4">
+          <div>
+            <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2 uppercase">
+              <Stethoscope className="w-7 h-7 text-blue-600 animate-pulse" />
+              Doctors Registry
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">Manage and monitor hospital medical staff profiles.</p>
+          </div>
+
+          <div className="flex items-center gap-2 bg-blue-50 text-blue-700 border border-blue-100 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider self-start md:self-auto">
+            {doctors.length} Registered Staff
+          </div>
+        </div>
+
+        {/* Search & Actions Controls Row */}
+        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center mb-6 gap-4 bg-white p-4 rounded-xl border border-slate-100 shadow-sm shadow-slate-100/50">
+          <div className="flex-1 relative">
+            <input
+                id="search"
+                type="text"
+                placeholder="Search by name, specialization, or ID..."
+                className="border border-slate-200 pl-10 pr-4 py-2.5 rounded-full w-full bg-slate-50/50 hover:border-blue-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all text-sm placeholder-slate-400"
+                onChange={(e) => setSearch(e.target.value)}
+            />
+            <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
           </div>
 
           <button
               onClick={handleAddDoctor}
-              className="bg-teal-600 hover:bg-teal-700 active:scale-95 text-white font-medium px-5 py-2.5 rounded-lg w-full sm:w-auto shadow-sm transition-all text-sm"
+              className="bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-semibold px-6 py-2.5 rounded-full shadow-md shadow-blue-500/15 transition-all text-sm flex items-center justify-center gap-1.5"
           >
-            ➕ Register Doctor
+            <Plus className="w-4 h-4 stroke-[3]" /> Register Doctor
           </button>
         </div>
 
-        <div className="border-b border-slate-200 mb-5"></div>
-
-        <div className="h-[calc(100vh-260px)] overflow-y-auto rounded-xl shadow-sm border border-slate-200/60 bg-white">
+        {/* Doctors Table Card Container */}
+        <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden min-h-[400px]">
           {isDoctorLoading ? (
-              <div className="flex items-center justify-center h-full text-slate-400 text-sm">
-                Loading system profiles...
+              <div className="flex flex-col items-center justify-center h-96 text-slate-400 gap-2">
+                <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                <p className="text-sm font-medium mt-1">Loading system profiles...</p>
               </div>
           ) : (
-              <DoctorTable
-                  doctors={doctors}
-                  search={search}
-                  onView={handleViewDoctor}
-                  onDelete={handleDeleteDoctor}
-              />
+              <div className="overflow-x-auto">
+                <DoctorTable
+                    doctors={doctors}
+                    search={search}
+                    onView={handleViewDoctor}
+                    onDelete={handleDeleteDoctor}
+                />
+              </div>
           )}
         </div>
 
+        {/* Sleek Popup Form Modal */}
         {showPopup && (
             <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex justify-center items-center z-[1000] p-4 transition-all">
-              <DoctorForm
-                  doctor={currentDoctor}
-                  existingDoctors={doctors}
-                  isEditing={!!currentDoctor}
-                  onSave={handleSaveDoctor}
-                  onClose={handleClosePopup}
-                  isSaving={isSaving}
-              />
+              <div className="animate-scale-in">
+                <DoctorForm
+                    doctor={currentDoctor}
+                    existingDoctors={doctors}
+                    isEditing={!!currentDoctor}
+                    onSave={handleSaveDoctor}
+                    onClose={handleClosePopup}
+                    isSaving={isSaving}
+                />
+              </div>
             </div>
         )}
       </div>

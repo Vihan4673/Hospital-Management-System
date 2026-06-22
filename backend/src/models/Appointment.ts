@@ -5,6 +5,10 @@ export type Appointment = {
     patient: mongoose.Types.ObjectId | string;
     appointmentDate: string;
     roomNumber: string;
+    doctorFee: number;
+
+    tokenNumber: number;
+
     status: "pending" | "cancelled" | "completed";
     createdAt: Date;
     updatedAt: Date;
@@ -31,6 +35,17 @@ const AppointmentSchema: Schema = new Schema<Appointment>(
             required: true,
             trim: true
         },
+        doctorFee: {
+            type: Number,
+            required: true,
+            default: 0
+        },
+
+        tokenNumber: {
+            type: Number,
+            required: true
+        },
+
         status: {
             type: String,
             enum: ["pending", "cancelled", "completed"],

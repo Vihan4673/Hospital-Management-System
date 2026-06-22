@@ -9,6 +9,8 @@ export type Doctor = {
     specialty: string;
     roomNumber: string;
     channellingPrice: number;
+    doctorFee?: number;
+    fee?: number;
     availableDays: string[];
     startTime: string;
     endTime: string;
@@ -18,63 +20,20 @@ export type Doctor = {
 
 const DoctorSchema: Schema = new Schema<Doctor>(
     {
-        doctorId: {
-            type: String,
-            required: true,
-            unique: true,
-            trim: true,
-        },
-        name: {
-            type: String,
-            required: true,
-            trim: true,
-        },
-        email: {
-            type: String,
-            required: true,
-            unique: true,
-            trim: true,
-            lowercase: true,
-        },
-        phone: {
-            type: String,
-            required: true,
-            trim: true,
-        },
-        specialty: {
-            type: String,
-            required: true,
-            trim: true,
-        },
-        roomNumber: {
-            type: String,
-            required: true,
-            trim: true,
-        },
-        channellingPrice: {
-            type: Number,
-            required: true,
-            min: 0,
-        },
-        availableDays: {
-            type: [String],
-            required: true,
-            default: [],
-        },
-        startTime: {
-            type: String,
-            required: true,
-            trim: true,
-        },
-        endTime: {
-            type: String,
-            required: true,
-            trim: true,
-        },
+        doctorId: { type: String, required: true, unique: true, trim: true },
+        name: { type: String, required: true, trim: true },
+        email: { type: String, required: true, unique: true, trim: true, lowercase: true },
+        phone: { type: String, required: true, trim: true },
+        specialty: { type: String, required: true, trim: true },
+        roomNumber: { type: String, required: true, trim: true },
+        channellingPrice: { type: Number, required: true, min: 0 },
+        doctorFee: { type: Number, default: 0 },
+        fee: { type: Number, default: 0 },
+        availableDays: { type: [String], required: true, default: [] },
+        startTime: { type: String, required: true, trim: true },
+        endTime: { type: String, required: true, trim: true },
     },
-    {
-        timestamps: true,
-    }
+    { timestamps: true }
 );
 
 export const DoctorModel = mongoose.model<Doctor>("Doctor", DoctorSchema);

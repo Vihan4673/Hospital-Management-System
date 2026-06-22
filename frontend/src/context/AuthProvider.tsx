@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react"
-import apiClient, { setHeader } from "../services/apiClient"
-import router from "../router"
+import { setHeader } from "../services/apiClient"
 import { AuthContext } from "./AuthContext"
 
 interface AuthProviderProps {
@@ -17,40 +16,26 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setAccessToken(token)
     }
 
-    const logout = () => setIsLoggedIn(false)
+    const logout = () => {
+        setIsLoggedIn(false)
+        setAccessToken("")
+    }
 
     useEffect(() => {
         setHeader(accessToken)
     }, [accessToken])
 
-    //This is what allows the user to stay logged in even after a page reload.
+    // ⚡ FIX: Page එක reload කරද්දී auto-login වීම සම්පූර්ණයෙන්ම ඉවත් කර ඇත.
     useEffect(() => {
-        const tryRefresh = async () => {
-            try {
-                const result = await apiClient.post("/auth/refresh-token")
-                console.log(result)
-                setAccessToken(result.data.accessToken)
-                setIsLoggedIn(true)
-
-                const currentPath = window.location.pathname
-                console.log(`current path ${currentPath}`)
-                if (currentPath === "/login" || currentPath === "/signup" || currentPath === "/dashboard/readers") {
-                    console.log("currentPath", currentPath)
-                    router.navigate("/dashboard")
-                }
-
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            } catch (error) {
-                setAccessToken("")
-                setIsLoggedIn(false)
-            } finally {
-                setIsAuthenticating(false)
-            }
-        }
-
-        tryRefresh()
+        // දැන් පිටුව refresh කරද්දී auto backend එකට කතා කරලා token refresh කරන්නේ නැත.
+        setAccessToken("")
+        setIsLoggedIn(false)
+        setIsAuthenticating(false) // Authentication check එක ඉවර බව දැනුම් දෙයි
     }, [])
 
-    return <AuthContext.Provider value={{ isLoggedIn, login, logout, isAuthenticating }}>{children}</AuthContext.Provider>
-
+    return (
+        <AuthContext.Provider value={{ isLoggedIn, login, logout, isAuthenticating }}>
+            {children}
+        </AuthContext.Provider>
+    )
 }

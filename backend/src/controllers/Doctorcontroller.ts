@@ -3,7 +3,6 @@ import mongoose from 'mongoose';
 import { DoctorModel } from '../models/DoctorModel';
 import { APIError } from '../errors/APIError';
 
-// 🔐 වඩාත් ආරක්ෂිතව ඊළඟ ID එක සාදන ආකාරය
 const generateNextDoctorId = async (): Promise<string> => {
   try {
     const lastDoctor = await DoctorModel.findOne({}, {}, { sort: { createdAt: -1 } });
@@ -26,8 +25,6 @@ const generateNextDoctorId = async (): Promise<string> => {
   }
 };
 
-// 💡 ─── ROOM AVAILABILITY CHECK HELPER FUNCTION ───
-// එකම කාමරය, එකම දවස්වල, එකම වෙලාවක ගැටෙනවාදැයි පරීක්ෂා කිරීම
 const checkRoomConflict = async (
     roomNumber: string,
     availableDays: string[],
@@ -37,28 +34,25 @@ const checkRoomConflict = async (
 ): Promise<boolean> => {
   if (!roomNumber || !availableDays || !startTime || !endTime) return false;
 
-  // Query සකස් කිරීම
   const query: any = {
-    roomNumber: { $regex: new RegExp(`^${roomNumber.trim()}$`, 'i') }, // Case-insensitive check
-    availableDays: { $in: availableDays }, // තෝරාගත් දවස් වලින් එකක් හෝ තිබේදැයි බැලීම
+    roomNumber: { $regex: new RegExp(`^${roomNumber.trim()}$`, 'i') },
+    availableDays: { $in: availableDays },
     $and: [
-      { startTime: { $lt: endTime } },  // පවතින startTime එක අලුත් endTime එකට වඩා අඩු විය යුතුය
-      { endTime: { $gt: startTime } }   // පවතින endTime එක අලුත් startTime එකට වඩා වැඩි විය යුතුය
+      { startTime: { $lt: endTime } },
+      { endTime: { $gt: startTime } }
     ]
   };
 
-  // Update එකකදී තමන්ගේම පරණ රෙකෝඩ් එක මඟ හැරීමට (Exclude current doctor)
   if (excludeDoctorId) {
     query._id = { $ne: new mongoose.Types.ObjectId(excludeDoctorId) };
   }
 
   const conflictingDoctor = await DoctorModel.findOne(query);
-  return !!conflictingDoctor; // තිබේ නම් true, නැත්නම් false
+  return !!conflictingDoctor;
 };
 
 export const createDoctor = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // 💡 roomNumber එක req.body එකෙන් ලබා ගැනීම
     const { name, email, phone, specialty, roomNumber, channellingPrice, availableDays, startTime, endTime } = req.body;
 
     const existingDoctor = await DoctorModel.findOne({ email });
@@ -66,7 +60,6 @@ export const createDoctor = async (req: Request, res: Response, next: NextFuncti
       return next(new APIError(400, 'Doctor with this email already exists'));
     }
 
-    // 💡 1. Backend Room Conflict Validation
     const hasRoomConflict = await checkRoomConflict(roomNumber, availableDays, startTime, endTime);
     if (hasRoomConflict) {
       return next(new APIError(400, 'The assigned room is already reserved by another doctor for the selected schedule.'));
@@ -80,7 +73,7 @@ export const createDoctor = async (req: Request, res: Response, next: NextFuncti
       email,
       phone,
       specialty,
-      roomNumber, // 💡 Save කිරීම
+      roomNumber,
       channellingPrice,
       availableDays,
       startTime,
@@ -90,7 +83,7 @@ export const createDoctor = async (req: Request, res: Response, next: NextFuncti
     const savedDoctor = await newDoctor.save();
     return res.status(201).json(savedDoctor);
   } catch (err: any) {
-    console.error("🔴 Create Doctor Error Details:", err);
+    console.error("Create Doctor Error Details:", err);
     if (err instanceof mongoose.Error.ValidationError) {
       const errors = Object.values(err.errors).map(e => e.message);
       return next(new APIError(400, 'Validation failed', errors));
@@ -134,7 +127,6 @@ export const updateDoctor = async (req: Request, res: Response, next: NextFuncti
 
     const { doctorId, ...updateData } = req.body;
 
-    // 💡 2. Update කරන වෙලාවටත් Room එක වෙනත් අයෙක් බුක් කරලාදැයි බැලීම (තමන්ගේ පරණ ID එක හැර)
     if (updateData.roomNumber && updateData.availableDays && updateData.startTime && updateData.endTime) {
       const hasRoomConflict = await checkRoomConflict(
           updateData.roomNumber,
@@ -157,7 +149,7 @@ export const updateDoctor = async (req: Request, res: Response, next: NextFuncti
     if (!updatedDoctor) return next(new APIError(404, 'Doctor not found'));
     return res.status(200).json(updatedDoctor);
   } catch (err: any) {
-    console.error("🔴 Update Doctor Error Details:", err);
+    console.error("Update Doctor Error Details:", err);
     if (err instanceof mongoose.Error.ValidationError) {
       const errors = Object.values(err.errors).map(e => e.message);
       return next(new APIError(400, 'Validation failed', errors));

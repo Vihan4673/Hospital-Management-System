@@ -1,4 +1,3 @@
-// src/services/authService.ts
 
 import type { User } from "../types/User"
 import apiClient from "./apiClient"
@@ -6,8 +5,9 @@ import apiClient from "./apiClient"
 export interface SignUpResponse {
   _id: string
   name: string
-  email: string
-  role: "patient" | "admin"
+  email?: string
+  doctorId?: string
+  role: "patient" | "admin" | "doctor"
 }
 
 export interface LoginResponse {
@@ -23,25 +23,29 @@ export interface RefreshTokenResponse {
   accessToken: string
 }
 
-// Sign up a new user
-export const signUp = async (userData: Omit<User, "_id" | "role">): Promise<SignUpResponse> => {
+interface SignUpData {
+  name: string
+  password: string
+  role: string
+  email?: string
+  doctorId?: string
+}
+
+export const signUp = async (userData: SignUpData): Promise<SignUpResponse> => {
   const response = await apiClient.post("/auth/signup", userData)
   return response.data
 }
 
-// Log in an existing user
-export const login = async (loginData: Omit<User, "name" | "role" | "_id">): Promise<LoginResponse> => {
+export const login = async (loginData: { identifier?: string; password: string; role: string }): Promise<LoginResponse> => {
   const response = await apiClient.post("/auth/login", loginData)
   return response.data
 }
 
-// Log out the current user
 export const logout = async (): Promise<LogoutResponse> => {
   const response = await apiClient.post("/auth/logout")
   return response.data
 }
 
-// Refresh the access token
 export const refreshToken = async (): Promise<RefreshTokenResponse> => {
   const response = await apiClient.post("/auth/refresh-token")
   return response.data

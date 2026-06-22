@@ -38,9 +38,9 @@ export const getOverdueReaders = async (req: Request, res: Response, next: NextF
       }
 
       overdueByPatient[patientId].overdueAppointments.push({
-        doctor: appointment.doctor, // 'book' වෙනුවට
+        doctor: appointment.doctor,
         dueDate: appointment.dueDate,
-        appointmentDate: appointment.appointmentDate, // 'lentDate' වෙනුවට
+        appointmentDate: appointment.appointmentDate,
       });
     });
 

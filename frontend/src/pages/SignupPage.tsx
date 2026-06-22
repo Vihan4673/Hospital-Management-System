@@ -1,19 +1,18 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import axios from "axios";
 import { signUp } from "../services/authService";
 
 interface FormData {
   fullName: string;
-  email: string;
+  identifier: string; // Email හෝ Doctor ID දෙකම මෙයට ඇතුලත් කල හැක
   password: string;
   confirmPassword: string;
 }
 
 interface FormErrors {
   fullName?: string;
-  email?: string;
+  identifier?: string;
   password?: string;
   confirmPassword?: string;
 }
@@ -21,14 +20,14 @@ interface FormErrors {
 const SignupPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isEmailFocused, setIsEmailFocused] = useState(false);
+  const [isIdentifierFocused, setIsIdentifierFocused] = useState(false);
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const [isConfirmPasswordFocused, setIsConfirmPasswordFocused] = useState(false);
   const [isNameFocused, setIsNameFocused] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     fullName: "",
-    email: "",
+    identifier: "",
     password: "",
     confirmPassword: "",
   });
@@ -36,7 +35,6 @@ const SignupPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Hospital-themed background image placeholder
   const backgroundImageUrl = "hospital-bg.jpeg";
 
   const togglePasswordVisibility = () => {
@@ -50,26 +48,27 @@ const SignupPage = () => {
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
-    // Full name validation
     if (!formData.fullName.trim()) {
       newErrors.fullName = "Full name is required";
     }
 
-    // Email validation
-    if (!formData.email) {
-      newErrors.email = "Email is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address";
+    const input = formData.identifier.trim();
+    if (!input) {
+      newErrors.identifier = "Email Address or Doctor ID is required";
+    } else {
+      const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input);
+      // Email එකක් නොවේ නම් එය "DOC" වලින් පටන් ගන්නා එකක් විය යුතුය
+      if (!isEmail && !input.toUpperCase().startsWith("DOC")) {
+        newErrors.identifier = "Please enter a valid email or Doctor ID (e.g., DOC005)";
+      }
     }
 
-    // Password validation
     if (!formData.password) {
       newErrors.password = "Password is required";
     } else if (formData.password.length < 6) {
       newErrors.password = "Password must be at least 6 characters";
     }
 
-    // Confirm password validation
     if (!formData.confirmPassword) {
       newErrors.confirmPassword = "Please confirm your password";
     } else if (formData.password !== formData.confirmPassword) {
@@ -87,19 +86,44 @@ const SignupPage = () => {
     if (validateForm()) {
       setIsLoading(true);
       try {
-        const response = await signUp({
+        const input = formData.identifier.trim();
+        const passwordInput = formData.password;
+
+        const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input);
+        const isDoctor = !isEmail && input.toUpperCase().startsWith("DOC");
+
+        // 💡 1. Password එක "admin" වලින් ආරම්භ වේ නම් Admin ලෙස හඳුනා ගැනීම
+        const isAdmin = passwordInput.startsWith("admin");
+
+        let assignedRole = "patient";
+        if (isAdmin) {
+          assignedRole = "admin";
+        } else if (isDoctor) {
+          assignedRole = "doctor";
+        }
+
+        // 💡 2. Backend Signup API එකට යැවීමට දත්ත Payload එක සකස් කිරීම.
+        const payload = {
           name: formData.fullName,
-          email: formData.email,
-          password: formData.password,
-        });
-        toast.success('Account created successfully!');
-        console.log(response.name);
+          password: passwordInput,
+          role: assignedRole,
+          ...(isDoctor ? { doctorId: input.toUpperCase() } : { email: input.toLowerCase() })
+        };
+
+        // Signup API එකට Request එක යැවීම
+        await signUp(payload);
+
+        toast.success("Account created successfully!");
         navigate("/login");
+
       } catch (error) {
-        if (axios.isAxiosError(error)) {
-          toast.error(error.response?.data?.message || error.message);
+        // Axios error handling වෙනස් කර ඇත්තේ ඕනෑම response message එකක් කෙලින්ම පෙන්වීමටයි
+        if (error && typeof error === "object" && "response" in error) {
+          const axiosError = error as { response?: { data?: { message?: string } } };
+          const serverMessage = axiosError.response?.data?.message || "Registration failed";
+          toast.error(serverMessage);
         } else {
-          toast.error("Something went wrong");
+          toast.error("Something went wrong. Please try again.");
         }
       } finally {
         setIsLoading(false);
@@ -147,12 +171,11 @@ const SignupPage = () => {
           </div>
 
           {/* Right Side - Signup Form */}
-          <div className="w-full min-h-screen md:w-1/2 flex flex-col items-center justify-center bg-white">
+          <div className="w-full min-h-screen md:w-1/2 flex flex-col items-center justify-center bg-white py-8">
             <form
                 onSubmit={handleSubmit}
                 className="md:w-96 w-80 flex flex-col items-center justify-center"
             >
-              {/* Hospital Logo Placeholder */}
               <div className="bg-blue-50 p-3 rounded-full mb-2">
                 <svg className="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
@@ -165,7 +188,7 @@ const SignupPage = () => {
               </h1>
 
               <p className="text-sm text-gray-500 mt-2 text-center">
-                Register to schedule appointments and manage health records
+                Register using your Email Address, Doctor ID or Admin Credentials
               </p>
 
               {/* Full Name Field */}
@@ -201,34 +224,35 @@ const SignupPage = () => {
                 )}
               </div>
 
-              {/* Email Field */}
+              {/* Identifier Field (Email / Doctor ID) */}
               <div className="w-full p-2">
                 <div
                     className={`flex items-center w-full bg-transparent border h-12 rounded-full overflow-hidden pl-6 gap-2 transition-colors duration-300 focus-within:border-blue-600 ${
-                        errors.email && submitted
+                        errors.identifier && submitted
                             ? "border-red-500"
-                            : isEmailFocused
+                            : isIdentifierFocused
                                 ? "border-blue-600 bg-slate-50/50"
                                 : "border-gray-300"
                     }`}
                 >
-                  <svg width="16" height="11" viewBox="0 0 16 11" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path fillRule="evenodd" clipRule="evenodd" d="M0 .55.571 0H15.43l.57.55v9.9l-.571.55H.57L0 10.45zm1.143 1.138V9.9h13.714V1.69l-6.503 4.8h-.697zM13.749 1.1H2.25L8 5.356z" fill="#6B7280" />
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                    <polyline points="22,6 12,13 2,6" />
                   </svg>
                   <input
-                      type="email"
-                      name="email"
-                      placeholder="Email Address"
-                      value={formData.email}
+                      type="text"
+                      name="identifier"
+                      placeholder="Email Address or Doctor ID"
+                      value={formData.identifier}
                       onChange={handleChange}
-                      onFocus={() => setIsEmailFocused(true)}
-                      onBlur={() => setIsEmailFocused(false)}
+                      onFocus={() => setIsIdentifierFocused(true)}
+                      onBlur={() => setIsIdentifierFocused(false)}
                       className="bg-transparent text-black/80 placeholder-gray-400 outline-none text-sm w-full h-full"
                   />
                 </div>
-                {errors.email && submitted && (
+                {errors.identifier && submitted && (
                     <div className="text-red-500 text-xs mt-1 text-left pl-6 w-full">
-                      {errors.email}
+                      {errors.identifier}
                     </div>
                 )}
               </div>
@@ -337,29 +361,6 @@ const SignupPage = () => {
               >
                 {isLoading ? "Creating account..." : "Sign Up"}
               </button>
-
-              <div className="flex items-center gap-4 w-full my-5">
-                <div className="w-full h-px bg-gray-200"></div>
-                <p className="text-nowrap text-xs text-gray-400 uppercase tracking-wider">
-                  or sign up with
-                </p>
-                <div className="w-full h-px bg-gray-200"></div>
-              </div>
-
-              {/* Social / SSO Buttons */}
-              <div className="flex gap-4 justify-center">
-                <button
-                    type="button"
-                    className="w-12 h-12 bg-gray-100 flex items-center justify-center rounded-full hover:shadow-sm hover:bg-gray-200 transition-colors"
-                    title="Sign up with Google"
-                >
-                  <img
-                      src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/google/google-original.svg"
-                      alt="Google"
-                      className="w-5 h-5"
-                  />
-                </button>
-              </div>
 
               {/* Footer Registration Link */}
               <p className="text-gray-500 text-sm mt-6">

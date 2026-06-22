@@ -8,14 +8,19 @@ const userSchema = new mongoose.Schema({
   },
   email: {
     type: String,
-    required: [true, "Email is required"],
-    unique: true,
     trim: true,
     lowercase: true,
+    index: { unique: true, sparse: true },
     match: [
       /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
       "Please enter a valid email address",
     ],
+  },
+  doctorId: {
+    type: String,
+    trim: true,
+    uppercase: true,
+    index: { unique: true, sparse: true },
   },
   password: {
     type: String,
@@ -23,9 +28,11 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ["patient", "admin"],
+    enum: ["patient", "doctor", "admin"],
     default: "patient"
   }
+}, {
+  timestamps: true
 })
 
 const UserModel = mongoose.model("User", userSchema)

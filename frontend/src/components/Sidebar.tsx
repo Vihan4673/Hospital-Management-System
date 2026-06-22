@@ -1,87 +1,132 @@
-import React, { useState, type JSX } from "react"
-import { MdDashboard, MdPeople, MdLocalHospital } from "react-icons/md"
-import { CalendarCheck, CalendarDays } from "lucide-react"
-import { useNavigate } from "react-router-dom"
+import React from "react";
+import { LayoutDashboard, Users, Stethoscope, CalendarCheck, ShieldCheck } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
 
 interface SidebarItem {
-  id: string
-  label: string
-  icon: JSX.Element
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  path: string;
 }
 
 const Sidebar: React.FC = () => {
-  const [activeItem, setActiveItem] = useState<string>("dashboard")
-  const navigate = useNavigate()
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const handleItemClick = (itemId: string) => {
-    setActiveItem(itemId)
-    if (itemId === "dashboard") navigate(`/dashboard`)
-    else navigate(`/dashboard/${itemId}`)
-  }
+  const getCurrentActiveItem = () => {
+    const path = location.pathname;
+    if (path === "/dashboard") return "dashboard";
+    if (path.includes("/patients")) return "patients";
+    if (path.includes("/doctors")) return "doctors";
+    if (path.includes("/appointments")) return "appointments";
+    return "dashboard";
+  };
 
-  // Channelling System එකකට අදාළව items ටික සකස් කරා
+  const activeItem = getCurrentActiveItem();
+
+  const handleItemClick = (item: SidebarItem) => {
+    navigate(item.path);
+  };
+
+  // ⚡ FIXED: Clinical Schedules ඉවත් කර ඉතිරි ඒවා පමණක් සකසන ලදී
   const sidebarItems: SidebarItem[] = [
     {
       id: "dashboard",
-      label: "Dashboard",
-      icon: <MdDashboard className='w-5 h-5' />,
+      label: "Overview Dashboard",
+      icon: <LayoutDashboard className="w-[18px] h-[18px]" />,
+      path: "/dashboard"
     },
     {
-      id: "patients", // readers -> patients
-      label: "Patients",
-      icon: <MdPeople className='w-5 h-5' />,
+      id: "patients",
+      label: "Patient Registry",
+      icon: <Users className="w-[18px] h-[18px]" />,
+      path: "/dashboard/patients"
     },
     {
-      id: "doctors", // books -> doctors
-      label: "doctors",
-      icon: <MdLocalHospital className='w-5 h-5' />,
+      id: "doctors",
+      label: "Medical Staff",
+      icon: <Stethoscope className="w-[18px] h-[18px]" />,
+      path: "/dashboard/doctors"
     },
     {
-      id: "appointments", // lendings -> appointments (Active Queue)
-      label: "Appointments",
-      icon: <CalendarCheck className="w-5 h-5" />,
-    },
-    {
-      id: "schedules", // overdues -> schedules (දොස්තරලාගේ වැඩ කරන වේලාවන්)
-      label: "DoctorModel Schedules",
-      icon: <CalendarDays className='w-5 h-5' />,
-    },
-  ]
+      id: "appointments",
+      label: "Appointments Queue",
+      icon: <CalendarCheck className="w-[18px] h-[18px]" />,
+      path: "/dashboard/appointments"
+    }
+  ];
 
   return (
-      <div className='bg-slate-900 text-slate-100 w-64 min-h-screen p-4 border-r border-slate-800 shadow-xl'>
-        <div className='mb-8 border-b border-slate-800 pb-4'>
-          {/* Channelling Panel Header */}
-          <h1 className='text-xl font-black tracking-wider text-center text-blue-400 uppercase'>
-            ⚕️ CHANNELLING
-          </h1>
+      <div className="bg-slate-950 text-slate-100 w-64 min-h-screen p-5 border-r border-slate-900/60 flex flex-col justify-between hidden md:flex shrink-0">
+        <div>
+          {/* Header Console */}
+          <div className="mb-8 px-2 pt-2 flex items-center gap-3 border-b border-slate-900 pb-5">
+            <div className="w-9 h-9 rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-center shadow-md shadow-black/40">
+              <ShieldCheck className="w-4 h-4 text-blue-500 animate-pulse" />
+            </div>
+            <div>
+              <h1 className="text-xs font-black tracking-widest text-slate-100 uppercase leading-none">
+                CONTROL PANEL
+              </h1>
+              <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest block mt-1.5">
+                Workspace Console
+              </span>
+            </div>
+          </div>
+
+          {/* Navigation Menu */}
+          <nav className="space-y-1">
+            <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest px-3 block mb-4">
+              Main Menu
+            </span>
+            <ul className="space-y-2">
+              {sidebarItems.map((item) => {
+                const isActive = activeItem === item.id;
+                return (
+                    <li key={item.id}>
+                      <button
+                          onClick={() => handleItemClick(item)}
+                          className={`w-full flex items-center space-x-3.5 px-4 py-3 rounded-xl transition-all duration-300 text-left group relative ${
+                              isActive
+                                  ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-600/20 font-semibold"
+                                  : "text-slate-400 hover:bg-slate-900/50 hover:text-slate-100 font-medium"
+                          }`}
+                      >
+                        {/* Smooth Active Indicator Bar */}
+                        {isActive && (
+                            <span className="absolute left-1.5 top-3 bottom-3 w-1 bg-white rounded-full" />
+                        )}
+
+                        <span className={`flex-shrink-0 transition-all duration-300 ${
+                            isActive ? "text-white scale-105" : "text-slate-500 group-hover:text-blue-400 group-hover:scale-110"
+                        }`}>
+                          {item.icon}
+                        </span>
+                        <span className="text-xs tracking-wide transition-colors duration-200">
+                          {item.label}
+                        </span>
+                      </button>
+                    </li>
+                );
+              })}
+            </ul>
+          </nav>
         </div>
 
-        <nav>
-          <ul className='space-y-2'>
-            {sidebarItems.map((item) => (
-                <li key={item.id}>
-                  <button
-                      onClick={() => handleItemClick(item.id)}
-                      className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 text-left group ${
-                          activeItem === item.id
-                              ? "bg-blue-600 text-white shadow-md shadow-blue-900/30 font-semibold"
-                              : "text-slate-400 hover:bg-slate-800 hover:text-slate-100"
-                      }`}
-                  >
-                <span className={`flex-shrink-0 transition-transform group-hover:scale-110 ${
-                    activeItem === item.id ? "text-white" : "text-slate-400 group-hover:text-blue-400"
-                }`}>
-                  {item.icon}
-                </span>
-                    <span className='text-sm font-medium'>{item.label}</span>
-                  </button>
-                </li>
-            ))}
-          </ul>
-        </nav>
+        {/* Footer inside Sidebar */}
+        <div className="pt-4 border-t border-slate-900/50 px-3 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+            </span>
+            <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+              Live Server Connected
+            </span>
+          </div>
+        </div>
       </div>
-  )
-}
+  );
+};
 
-export default Sidebar
+export default Sidebar;

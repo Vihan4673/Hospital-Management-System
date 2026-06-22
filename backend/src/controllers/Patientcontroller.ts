@@ -17,7 +17,7 @@ const generatePatientId = async (): Promise<string> => {
 
         return `PAT${padded}`;
     } catch (err) {
-        return 'PAT001'; // 💡 Error එකක් ආවොත් සර්වර් එක ක්‍රෑෂ් නොවී default ID එකක් දීම
+        return 'PAT001';
     }
 };
 
@@ -65,7 +65,7 @@ export const getAllPatients = async (req: Request, res: Response, next: NextFunc
         const patients = await PatientModel.find().lean();
         res.status(200).json(patients);
     } catch (error: any) {
-        console.error("🔥 GET ALL PATIENTS ERROR:", error);
+        console.error("GET ALL PATIENTS ERROR:", error);
         next(new APIError(500, "Internal server Error", error.message));
     }
 };

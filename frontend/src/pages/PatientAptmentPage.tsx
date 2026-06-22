@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { getAllDoctors } from "../services/DoctorService";
 import { addPatient } from "../services/PatientService";
 import { createAppointment } from "../services/AppointmentService";
+import { getAiRecommendation } from "../services/AiService";
 
 import type { Doctor } from "../types/Doctor.ts";
-import { CalendarCheck, User, Stethoscope, Sparkles } from "lucide-react";
+import { CalendarCheck, User, Stethoscope, Sparkles, X, ChevronDown, CheckCircle2, ArrowLeft, Home } from "lucide-react";
 import toast from "react-hot-toast";
 
 interface RecommendationResult {
@@ -21,6 +23,8 @@ interface ClinicSlot {
 }
 
 const PatientAppointmentPage: React.FC = () => {
+  const navigate = useNavigate();
+
   // Database States
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [specialties, setSpecialties] = useState<string[]>([]);
@@ -39,12 +43,13 @@ const PatientAppointmentPage: React.FC = () => {
   const [availableDates, setAvailableDates] = useState<ClinicSlot[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>("");
 
+  // Doctor Details State
   const [doctorDetails, setDoctorDetails] = useState({
     _id: "",
     name: "",
     roomNumber: "",
     timeSlot: "",
-    channelingPrice: "—"
+    doctorFee: 0
   });
 
   // AI States
@@ -53,8 +58,8 @@ const PatientAppointmentPage: React.FC = () => {
   const [aiResult, setAiResult] = useState<RecommendationResult | null>(null);
   const [isAiModalOpen, setIsAiModalOpen] = useState<boolean>(false);
 
-  // Backend එකෙන් Doctors ලා Fetch කිරීම
   useEffect(() => {
+    document.title = "MediCare | Book Appointment";
     const fetchDoctors = async () => {
       try {
         setIsLoading(true);
@@ -78,7 +83,6 @@ const PatientAppointmentPage: React.FC = () => {
     fetchDoctors();
   }, []);
 
-  // ඩොක්ටර් කෙනෙකුගේ දින 14ක කාලසටහන සෑදීම
   const generateSlotsForDoctor = (doctor: Doctor): ClinicSlot[] => {
     const slots: ClinicSlot[] = [];
     const today = new Date();
@@ -107,11 +111,10 @@ const PatientAppointmentPage: React.FC = () => {
     return slots;
   };
 
-  // Specialty එක වෙනස් කිරීමේදී දින සොයා ගැනීම
   const handleSpecialtyChange = (spec: string, currentDoctorsList = doctors) => {
     setSelectedSpecialty(spec);
     setSelectedDate("");
-    setDoctorDetails({ _id: "", name: "", roomNumber: "", timeSlot: "", channelingPrice: "—" });
+    setDoctorDetails({ _id: "", name: "", roomNumber: "", timeSlot: "", doctorFee: 0 });
 
     if (!spec) {
       setAvailableDates([]);
@@ -133,12 +136,11 @@ const PatientAppointmentPage: React.FC = () => {
     return combinedSlots;
   };
 
-  // ਰਹੀਆ ਦਿනයක් තෝරාගත් පසු ඩොක්ටර්ගේ විස්තර Auto-Fill කිරීම
   const handleDateChange = (dateStr: string) => {
     setSelectedDate(dateStr);
 
     if (!dateStr) {
-      setDoctorDetails({ _id: "", name: "", roomNumber: "", timeSlot: "", channelingPrice: "—" });
+      setDoctorDetails({ _id: "", name: "", roomNumber: "", timeSlot: "", doctorFee: 0 });
       return;
     }
 
@@ -157,92 +159,78 @@ const PatientAppointmentPage: React.FC = () => {
           ? `${formatTime(foundSlot.doctor.startTime)} - ${formatTime(foundSlot.doctor.endTime)}`
           : "Not Set";
 
+      // ⚡ FIX: 'Doctor' type එකේ doctorFee නැති නිසා (as any) ලෙස cast කර TS Error TS2339 මඟහැරුවා
+      const docData = foundSlot.doctor as any;
+
       setDoctorDetails({
         _id: foundSlot.doctor._id || "",
         name: foundSlot.doctor.name,
         roomNumber: foundSlot.doctor.roomNumber || "Not Assigned",
         timeSlot: timeRange,
-        channelingPrice: foundSlot.doctor.channelingPrice ? `LKR ${foundSlot.doctor.channelingPrice}.00` : "—"
+        doctorFee: docData.doctorFee || docData.fee || docData.channellingPrice || 0
       });
     }
   };
 
-  // AI Symptom Matcher
   const handleAiAnalysis = async () => {
-    if (!symptoms.trim()) return;
+    if (!symptoms.trim()) {
+      toast.error("Please describe your symptoms first.");
+      return;
+    }
+
     setIsAiAnalyzing(true);
     setIsAiModalOpen(false);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1200));
-      const text = symptoms.toLowerCase();
-      let recommendation: RecommendationResult = {
-        recommendedSpecialty: "General Physician",
-        confidence: 60,
-        explanation: "Based on your symptoms, we suggest starting with a General Physician."
-      };
-
-      if (text.includes("heart") || text.includes("chest pain") || text.includes("palpitation")) {
-        recommendation = { recommendedSpecialty: "Cardiologist", confidence: 95, explanation: "Your chest symptoms strongly suggest a cardiovascular checkup." };
-      } else if (text.includes("headache") || text.includes("nerve") || text.includes("dizzy")) {
-        recommendation = { recommendedSpecialty: "Neurologist", confidence: 90, explanation: "Headaches or nerve-related anomalies indicate a neurological assessment." };
-      } else if (text.includes("skin") || text.includes("rash") || text.includes("itching")) {
-        recommendation = { recommendedSpecialty: "Dermatologist", confidence: 88, explanation: "Rashes or skin irritations are best handled by a Dermatologist." };
-      } else if (text.includes("child") || text.includes("baby") || text.includes("kid") || text.includes("infant")) {
-        recommendation = { recommendedSpecialty: "Pediatrician", confidence: 94, explanation: "Medical care for children/infants is assigned to specialist Pediatricians." };
-      }
-
+      const recommendation = await getAiRecommendation(symptoms, specialties);
       setAiResult(recommendation);
+
       const generatedSlots = handleSpecialtyChange(recommendation.recommendedSpecialty, doctors);
 
       if (!generatedSlots || generatedSlots.length === 0) {
-        toast.error(`AI suggested ${recommendation.recommendedSpecialty}, but no active schedules found!`);
+        toast.error(`AI suggested "${recommendation.recommendedSpecialty}", but no active schedules were found!`);
       } else {
         toast.success(`AI Recommended: ${recommendation.recommendedSpecialty}`);
       }
     } catch (error) {
-      console.error("AI Assistant Error:", error);
-      toast.error("AI Analysis failed.");
+      console.error("Grok AI Assistant Error:", error);
+      toast.error("AI Analysis failed. Please select a specialty manually.");
     } finally {
       setIsAiAnalyzing(false);
     }
   };
 
-  // Form Submit - Database එකට Patient සහ Appointment සේව් කිරීම
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!doctorDetails._id || !selectedDate) {
-      toast.error("Please select a valid specialty and available date!");
+      toast.error("Please select a valid specialty and available schedule!");
       return;
     }
 
     try {
-      // 1. Patient විස්තර Patient Table එකට සේව් කිරීම
+      // ⚡ FIX: email එක 'undefined' නොදී string එකක් දීමෙන් TS Error TS2345 නිවැරදි කළා
       const patientData = {
         name: patientName,
         phone: patientPhone,
-        email: patientEmail || undefined, // 💡 Empty string එකක් වෙනුවට undefined යැවීමෙන් duplicate errors අවම වේ
+        email: patientEmail || "",
         age: parseInt(patientAge, 10),
         gender: patientGender,
         address: patientAddress
       };
 
-      const savedPatient = await addPatient(patientData);
+      const savedPatient = await addPatient(patientData as any);
       const savedPatientId = savedPatient._id;
 
-      // 2. Appointment එක Appointment Table එකට සේව් කිරීම
-      // 💡 FIX: මෙතනට 'doctorDetails.timeSlot' එකත් දත්තයක් විදිහට පාස් කළා (Backend එකට අවශ්‍ය නම්)
       const appointmentResponse = await createAppointment(
           doctorDetails._id,
           savedPatientId as string,
           selectedDate,
-          doctorDetails.roomNumber
+          doctorDetails.roomNumber,
+          doctorDetails.doctorFee
       );
 
       if (appointmentResponse) {
         toast.success("Appointment successfully booked!");
-
-        // Form Fields Reset කිරීම
         setPatientName("");
         setPatientPhone("");
         setPatientEmail("");
@@ -252,18 +240,17 @@ const PatientAppointmentPage: React.FC = () => {
         setSelectedSpecialty("");
         setSelectedDate("");
         setAvailableDates([]);
-        setDoctorDetails({ _id: "", name: "", roomNumber: "", timeSlot: "", channelingPrice: "—" });
+        setDoctorDetails({ _id: "", name: "", roomNumber: "", timeSlot: "", doctorFee: 0 });
         setAiResult(null);
         setSymptoms("");
       }
     } catch (error: any) {
       console.error("Booking handler error:", error);
-      // 💡 FIX: සර්වර් එකෙන් එන ඇත්තම වැරැද්ද (උදා: Email duplicate error) screen එකේ පෙන්වීම
       const serverMessage = error.response?.data?.message || error.message;
       if (serverMessage?.includes("E11000") || serverMessage?.includes("duplicate")) {
         toast.error("This email address is already registered with another patient.");
       } else {
-        toast.error(serverMessage || "Booking Failed. Please check backend log.");
+        toast.error(serverMessage || "Booking Failed.");
       }
     }
   };
@@ -272,72 +259,90 @@ const PatientAppointmentPage: React.FC = () => {
     return (
         <div className="min-h-screen flex items-center justify-center bg-slate-50">
           <div className="flex flex-col items-center gap-3">
-            <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-sm font-semibold text-slate-600">Loading Hospital Data...</p>
+            <div className="w-12 h-12 border-[3px] border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-xs font-bold text-blue-950 uppercase tracking-wider">Loading Hospital Core Data...</p>
           </div>
         </div>
     );
   }
 
   return (
-      <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
+      <div className="h-screen bg-slate-100/60 overflow-y-auto py-6 sm:py-12 px-4 sm:px-6 lg:px-8 custom-scrollbar">
+        <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 mb-12 overflow-hidden">
 
-          {/* Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-6 py-6 text-center sm:text-left flex items-center gap-3 justify-center sm:justify-start">
-            <CalendarCheck className="w-8 h-8 text-white hidden sm:block" />
-            <div>
-              <h1 className="text-xl sm:text-2xl font-black text-white tracking-wide uppercase">MEDICARE HOSPITAL</h1>
-              <p className="text-blue-100 text-xs sm:text-sm mt-0.5 font-medium">Book Your Doctor's Appointment Online Instantly</p>
+          {/* Premium Header Banner & Home Navigation */}
+          <div className="bg-[#1976D2] px-6 sm:px-10 py-6 sm:py-8 border-b border-blue-700/20 flex flex-col gap-4 sm:flex-row items-center justify-between">
+            <div className="flex items-center gap-4 flex-col sm:flex-row text-center sm:text-left">
+              <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-md hidden sm:block">
+                <CalendarCheck className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight uppercase">MEDI<span className="text-blue-200">CARE</span> PORTAL</h1>
+                <p className="text-blue-100 text-xs sm:text-sm mt-0.5 font-medium">Book Your Doctor's Appointment Online Instantly</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                  type="button"
+                  onClick={() => navigate("/")}
+                  className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition duration-200 backdrop-blur-sm border border-white/10"
+              >
+                <Home className="w-4 h-4" />
+                <span>Go Home</span>
+              </button>
             </div>
           </div>
 
-          <form onSubmit={handleFormSubmit} className="p-5 sm:p-8 space-y-6">
+          <form onSubmit={handleFormSubmit} className="p-5 sm:p-10 space-y-8">
 
             {/* AI Banner */}
             {aiResult && (
-                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex justify-between items-start gap-4">
-                  <div className="space-y-1">
-                    <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 uppercase">AI Suggestion</span>
-                    <h4 className="text-xs sm:text-sm font-bold text-slate-900">Recommended Specialty: <span className="text-emerald-700">{aiResult.recommendedSpecialty}</span></h4>
-                    <p className="text-xs text-slate-600">{aiResult.explanation}</p>
+                <div className="bg-emerald-50/60 border border-emerald-200/80 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 animate-fade-in">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      <span className="inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 uppercase tracking-wide">Grok AI Suggestion</span>
+                    </div>
+                    <h4 className="text-sm font-black text-slate-900">Recommended Specialty: <span className="text-emerald-700 font-extrabold">{aiResult.recommendedSpecialty}</span></h4>
+                    <p className="text-xs text-slate-600 font-medium max-w-xl leading-relaxed">{aiResult.explanation}</p>
                   </div>
-                  <button type="button" onClick={() => { setAiResult(null); handleSpecialtyChange(""); }} className="text-xs font-bold border px-2.5 py-1 rounded-lg bg-white shadow-sm hover:bg-rose-50 hover:text-rose-600 transition">Reset</button>
+                  <button type="button" onClick={() => { setAiResult(null); handleSpecialtyChange(""); }} className="text-xs font-bold border border-slate-200 px-4 py-2 rounded-xl bg-white text-slate-700 shadow-xs hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-all duration-200 w-full sm:w-auto text-center shrink-0">Reset Input</button>
                 </div>
             )}
 
             {/* SECTION 1: PATIENT INFORMATION */}
-            <div className="space-y-4">
-              <h3 className="text-xs sm:text-sm font-bold text-blue-700 uppercase tracking-wider border-b pb-2 flex items-center gap-2">
-                <User className="w-4 h-4" /> 1. Patient Information
+            <div className="space-y-5">
+              <h3 className="text-sm font-black text-blue-900 uppercase tracking-wider border-b border-slate-100 pb-3 flex items-center gap-2.5">
+                <User className="w-4 h-4 text-blue-600" /> 1. Patient Personal Information
               </h3>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-slate-600">Full Name *</label>
-                  <input type="text" required placeholder="Enter patient's full name" value={patientName} onChange={(e) => setPatientName(e.target.value)} className="w-full text-xs sm:text-sm p-3 border border-slate-200 rounded-xl outline-none focus:border-blue-500 bg-slate-50/50" />
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Full Name *</label>
+                  <input type="text" required placeholder="Enter patient's full name" value={patientName} onChange={(e) => setPatientName(e.target.value)} className="w-full text-sm p-3.5 border border-slate-200 rounded-xl outline-none focus:border-blue-500 bg-slate-50/50 font-medium transition" />
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-slate-600">Mobile Number *</label>
-                  <input type="tel" required placeholder="e.g. 0771234567" value={patientPhone} onChange={(e) => setPatientPhone(e.target.value)} className="w-full text-xs sm:text-sm p-3 border border-slate-200 rounded-xl outline-none focus:border-blue-500 bg-slate-50/50" />
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Mobile Number *</label>
+                  <input type="tel" required placeholder="e.g. 0771234567" value={patientPhone} onChange={(e) => setPatientPhone(e.target.value)} className="w-full text-sm p-3.5 border border-slate-200 rounded-xl outline-none focus:border-blue-500 bg-slate-50/50 font-medium transition" />
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-slate-600">Email Address (Optional)</label>
-                  <input type="email" placeholder="patient@example.com" value={patientEmail} onChange={(e) => setPatientEmail(e.target.value)} className="w-full text-xs sm:text-sm p-3 border border-slate-200 rounded-xl outline-none focus:border-blue-500 bg-slate-50/50" />
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Email Address (Optional)</label>
+                  <input type="email" placeholder="patient@example.com" value={patientEmail} onChange={(e) => setPatientEmail(e.target.value)} className="w-full text-sm p-3.5 border border-slate-200 rounded-xl outline-none focus:border-blue-500 bg-slate-50/50 font-medium transition" />
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-slate-600">Age *</label>
-                  <input type="number" required placeholder="Age" min="0" max="120" value={patientAge} onChange={(e) => setPatientAge(e.target.value)} className="w-full text-xs sm:text-sm p-3 border border-slate-200 rounded-xl outline-none focus:border-blue-500 bg-slate-50/50" />
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Age *</label>
+                  <input type="number" required placeholder="Age" min="0" max="120" value={patientAge} onChange={(e) => setPatientAge(e.target.value)} className="w-full text-sm p-3.5 border border-slate-200 rounded-xl outline-none focus:border-blue-500 bg-slate-50/50 font-medium transition" />
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-slate-600">Gender *</label>
-                  <div className="grid grid-cols-3 gap-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Gender *</label>
+                  <div className="grid grid-cols-3 gap-2 h-[48px]">
                     {["Male", "Female", "Other"].map((gen) => (
-                        <button key={gen} type="button" onClick={() => setPatientGender(gen)} className={`py-2.5 text-xs font-bold rounded-xl border transition ${patientGender === gen ? "bg-blue-600 text-white border-blue-600 shadow-sm" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"}`}>
+                        <button key={gen} type="button" onClick={() => setPatientGender(gen)} className={`h-full text-xs font-bold rounded-xl border transition-all duration-200 ${patientGender === gen ? "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-600/10" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"}`}>
                           {gen}
                         </button>
                     ))}
@@ -345,102 +350,146 @@ const PatientAppointmentPage: React.FC = () => {
                 </div>
 
                 <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <label className="text-xs font-semibold text-slate-600">Residential Address *</label>
-                  <input type="text" required placeholder="Enter primary residential address" value={patientAddress} onChange={(e) => setPatientAddress(e.target.value)} className="w-full text-xs sm:text-sm p-3 border border-slate-200 rounded-xl outline-none focus:border-blue-500 bg-slate-50/50" />
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Residential Address *</label>
+                  <input type="text" required placeholder="Enter primary residential address" value={patientAddress} onChange={(e) => setPatientAddress(e.target.value)} className="w-full text-sm p-3.5 border border-slate-200 rounded-xl outline-none focus:border-blue-500 bg-slate-50/50 font-medium transition" />
                 </div>
               </div>
             </div>
 
             {/* SECTION 2: APPOINTMENT DETAILS */}
-            <div className="space-y-4 pt-2">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-2">
-                <h3 className="text-xs sm:text-sm font-bold text-blue-700 uppercase tracking-wider flex items-center gap-2">
-                  <Stethoscope className="w-4 h-4" /> 2. Select Schedule
+            <div className="space-y-5 pt-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                <h3 className="text-sm font-black text-blue-900 uppercase tracking-wider flex items-center gap-2.5">
+                  <Stethoscope className="w-4 h-4 text-blue-600" /> 2. Select Hospital Schedule
                 </h3>
-                <button type="button" onClick={() => setIsAiModalOpen(true)} className="inline-flex items-center gap-1.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-3 py-1.5 rounded-lg text-[11px] font-bold shadow-sm transition transform active:scale-95 self-start sm:self-auto">
-                  <Sparkles className="w-3.5 h-3.5" /> {isAiAnalyzing ? "Analyzing..." : "Don't Know the Specialty? Ask AI"}
+                <button type="button" onClick={() => setIsAiModalOpen(true)} className="inline-flex items-center justify-center gap-2 bg-[#009688] hover:bg-[#00897B] text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-sm transition-all duration-200 transform active:scale-95 w-full sm:w-auto">
+                  <Sparkles className="w-4 h-4 animate-pulse" /> {isAiAnalyzing ? "Analyzing Symptoms..." : "Smart AI Symptom Guide"}
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
 
                 {/* Specialty Dropdown */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-slate-600">Medical Specialty *</label>
-                  <select value={selectedSpecialty} onChange={(e) => handleSpecialtyChange(e.target.value)} required className="w-full text-xs sm:text-sm p-3 border border-slate-200 rounded-xl outline-none focus:border-blue-500 bg-white">
-                    <option value="">-- Choose Specialty --</option>
-                    {specialties.map((spec) => (
-                        <option key={spec} value={spec}>{spec}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Available Dates Dropdown */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-slate-600">Available Date & Doctor *</label>
-                  <select value={selectedDate} onChange={(e) => handleDateChange(e.target.value)} required disabled={!selectedSpecialty || availableDates.length === 0} className="w-full text-xs sm:text-sm p-3 border border-slate-200 rounded-xl outline-none focus:border-blue-500 bg-white disabled:bg-slate-100">
-                    <option value="">
-                      {!selectedSpecialty
-                          ? "-- Select Specialty First --"
-                          : availableDates.length === 0
-                              ? "-- No Available Schedules --"
-                              : "-- Select Date & Doctor --"}
-                    </option>
-                    {availableDates.map((slot) => (
-                        // 💡 FIX: HTML keys වලට index එක වෙනුවට unique string එකක් භාවිතය
-                        <option key={`${slot.doctor._id}-${slot.dateString}`} value={slot.dateString}>{slot.display}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Auto-filled Doctor */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-slate-600">Assigned Doctor</label>
-                  <input type="text" readOnly placeholder="Auto-filled Doctor" value={doctorDetails.name ? `Dr. ${doctorDetails.name}` : ""} className="w-full text-xs sm:text-sm p-3 border border-slate-200 rounded-xl bg-slate-100 font-bold text-slate-800 outline-none" />
-                </div>
-
-                {/* Info Card for Room, Time & Price */}
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 grid grid-cols-3 gap-2 text-center">
-                  <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Room</span>
-                    <span className="text-xs font-bold text-slate-700">{doctorDetails.roomNumber || "—"}</span>
+                <div className="flex flex-col gap-1.5 relative">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Medical Specialty *</label>
+                  <div className="relative">
+                    <select value={selectedSpecialty} onChange={(e) => handleSpecialtyChange(e.target.value)} required className="w-full text-sm p-3.5 border border-slate-200 rounded-xl outline-none focus:border-blue-500 bg-white appearance-none font-medium h-[50px] pr-10">
+                      <option value="">-- Choose Specialty --</option>
+                      {specialties.map((spec) => (
+                          <option key={spec} value={spec}>{spec}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="w-4 h-4 text-slate-400 absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none" />
                   </div>
-                  <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Time Slot</span>
-                    <span className="text-[11px] font-bold text-emerald-700 block leading-tight mt-0.5">{doctorDetails.timeSlot || "—"}</span>
+                </div>
+
+                {/* Available Dates & Doctor Choice */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Available Schedules *</label>
+                  <div className="relative">
+                    <select value={selectedDate} onChange={(e) => handleDateChange(e.target.value)} required disabled={!selectedSpecialty || availableDates.length === 0} className="w-full text-sm p-3.5 border border-slate-200 rounded-xl outline-none focus:border-blue-500 bg-white disabled:bg-slate-100 appearance-none font-medium h-[50px] pr-10">
+                      <option value="">
+                        {!selectedSpecialty
+                            ? "Select Specialty First"
+                            : availableDates.length === 0
+                                ? "No Available Slots Found"
+                                : "-- Choose Available Slot --"}
+                      </option>
+                      {availableDates.map((slot) => (
+                          <option key={`${slot.doctor._id}-${slot.dateString}`} value={slot.dateString}>{slot.display}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="w-4 h-4 text-slate-400 absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none" />
                   </div>
-                  <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Fee</span>
-                    <span className="text-xs font-extrabold text-blue-600">{doctorDetails.channelingPrice}</span>
+                </div>
+
+                {/* Assigned Doctor Display */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Assigned Doctor</label>
+                  <input type="text" readOnly placeholder="Auto-filled Doctor Name" value={doctorDetails.name ? `Dr. ${doctorDetails.name}` : ""} className="w-full text-sm p-3.5 border border-slate-100 rounded-xl bg-slate-100/80 font-bold text-slate-800 outline-none h-[50px]" />
+                </div>
+
+                {/* Info Display Card */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Consultation Summary</label>
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 grid grid-cols-3 gap-2 text-center h-[50px] items-center">
+                    <div>
+                      <span className="text-[9px] uppercase font-bold text-slate-400 block tracking-wider">Room</span>
+                      <span className="text-xs font-extrabold text-slate-700 block truncate">{doctorDetails.roomNumber || "—"}</span>
+                    </div>
+                    <div className="border-x border-slate-200 px-1">
+                      <span className="text-[9px] uppercase font-bold text-slate-400 block tracking-wider">Time</span>
+                      <span className="text-[10px] font-extrabold text-emerald-700 block truncate leading-tight">{doctorDetails.timeSlot || "—"}</span>
+                    </div>
+                    <div>
+                      <span className="text-[9px] uppercase font-bold text-slate-400 block tracking-wider">Fee</span>
+                      <span className="text-xs font-black text-blue-600 block truncate">
+                        {doctorDetails.doctorFee > 0
+                            ? `LKR ${doctorDetails.doctorFee.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+                            : "—"}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
               </div>
             </div>
 
-            {/* Book Button */}
-            <div className="pt-4 border-t border-slate-100">
-              <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl text-xs sm:text-sm font-bold shadow-lg shadow-blue-600/15 transition-all transform active:scale-[0.99]">
-                Confirm & Book Appointment
+            {/* Submit Action Button */}
+            <div className="pt-6 border-t border-slate-100">
+              <button type="submit" className="w-full bg-[#1976D2] hover:bg-blue-700 text-white py-4 rounded-xl text-sm font-black uppercase tracking-wider shadow-lg shadow-blue-700/20 transition-all transform active:scale-[0.99]">
+                Confirm & Secure Appointment
               </button>
             </div>
           </form>
+
+          {/* Subtle Back Link */}
+          <div className="p-6 bg-slate-50 text-center border-t border-slate-100">
+            <button
+                type="button"
+                onClick={() => navigate("/")}
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-blue-600 transition"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back to Home Page</span>
+            </button>
+          </div>
         </div>
 
-        {/* AI Modal */}
+        {/* MODERN BLUR AI MODAL */}
         {isAiModalOpen && (
-            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-              <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
-                <div className="bg-slate-900 px-5 py-4 flex justify-between items-center">
-                  <h3 className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">🔮 AI Symptom Guide</h3>
-                  <button type="button" onClick={() => setIsAiModalOpen(false)} className="text-slate-400 hover:text-white font-bold">✕</button>
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in">
+              <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col border border-slate-100 animate-scale-up">
+                <div className="bg-slate-950 px-6 py-4 flex justify-between items-center">
+                  <div className="flex items-center gap-2 text-white">
+                    <Sparkles className="w-5 h-5 text-amber-400 animate-pulse" />
+                    <h3 className="text-sm font-black uppercase tracking-wider">Grok AI Assistant</h3>
+                  </div>
+                  <button type="button" onClick={() => setIsAiModalOpen(false)} className="text-slate-400 hover:text-white transition p-1 rounded-lg">
+                    <X className="w-5 h-5" />
+                  </button>
                 </div>
-                <div className="p-5 space-y-4">
-                  <textarea value={symptoms} onChange={(e) => setSymptoms(e.target.value)} placeholder="Describe symptoms (e.g., severe chest discomfort, skin rash...)" rows={4} className="w-full text-xs sm:text-sm p-3 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 bg-slate-50" />
-                  <div className="flex justify-end gap-3">
-                    <button type="button" onClick={() => setIsAiModalOpen(false)} className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200">Cancel</button>
-                    <button type="button" onClick={handleAiAnalysis} disabled={!symptoms.trim() || isAiAnalyzing} className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-300 text-white px-5 py-2 rounded-xl text-xs font-bold transition">
-                      {isAiAnalyzing ? "Analyzing..." : "Analyze & Auto-Fill"}
+                <div className="p-6 space-y-4 flex-1">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Describe Your Symptoms</label>
+                    <p className="text-xs text-slate-400">Our AI will match you with the right clinical specialist department instantly.</p>
+                  </div>
+                  <textarea
+                      value={symptoms}
+                      onChange={(e) => setSymptoms(e.target.value)}
+                      placeholder="Enter details (e.g., experiencing severe lower back pain spreading down into right leg...)"
+                      rows={4}
+                      className="w-full text-sm p-4 border border-slate-200 rounded-xl outline-none focus:border-blue-500 bg-slate-50/50 font-medium resize-none"
+                  />
+                  <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
+                    <button type="button" onClick={() => setIsAiModalOpen(false)} className="px-5 py-2.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition">Cancel</button>
+                    <button
+                        type="button"
+                        onClick={handleAiAnalysis}
+                        disabled={!symptoms.trim() || isAiAnalyzing}
+                        className="bg-blue-600 hover:bg-blue-500 disabled:bg-slate-300 text-white px-6 py-2.5 rounded-xl text-xs font-bold transition shadow-md shadow-blue-600/10"
+                    >
+                      {isAiAnalyzing ? "Analyzing..." : "Analyze & Apply"}
                     </button>
                   </div>
                 </div>

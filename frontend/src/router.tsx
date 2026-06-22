@@ -10,7 +10,8 @@ import AppointmentPage from "./pages/AppointmentPage.tsx";
 import OverduePage from "./pages/OverduePage";
 import UserProfile from "./pages/UserProfilePage";
 import Homepage from "./pages/HomePage";
-import PatientAptmentPage from "./pages/PatientAptmentPage"; // 👈 නිවැරදිව import කර ඇත
+import PatientAptmentPage from "./pages/PatientAptmentPage";
+import DoctorDashboard from "./pages/DoctorDashboardPage.tsx";
 
 const router = createBrowserRouter([
   {
@@ -21,7 +22,14 @@ const router = createBrowserRouter([
       { path: "/login", element: <Loginpage/> },
       { path: "/signup", element: <SignupPage/> },
       { path: "/homepage", element: <Homepage /> },
-      { path: "/PatientAptmentPage", element: <PatientAptmentPage /> }, // 👈 මෙතනට route එක එකතු කරන ලදී
+      { path: "/PatientAptmentPage", element: <PatientAptmentPage /> },
+
+      {
+        // 💡 FIX: LoginPage එකෙන් navigate කරන "/doctor-dashboard" වලටම path එක වෙනස් කරන ලදී.
+        path: "/doctor-dashboard",
+        element: <DoctorDashboard />
+      },
+
       {
         element: <AdminRoutes/>,
         children: [
