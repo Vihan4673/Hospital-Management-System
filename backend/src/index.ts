@@ -5,8 +5,11 @@ import { errorHandler } from "./middleware/errorhandler";
 import rootRouter from "./routes/index.route";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import aiRoutes from "./routes/AiRoutes"; // AI route එක නිවැරදිව import කර ඇත
 
 dotenv.config();
+
+// 💡 FIX: මුලින්ම app එක create කරගන්න ඕනේ
 const app = express();
 
 // 1. FIX: Port එක 5000 කරන්න (Frontend එක 3000 නිසා)
@@ -22,9 +25,14 @@ const corsOptions = {
     allowedHeaders: ["Content-Type", "Authorization"]
 };
 
+// Middlewares පිළිවෙලකට සකස් කිරීම
 app.use(cors(corsOptions));
 app.use(cookieParser());
 app.use(express.json());
+
+// 💡 FIX: දැන් app එක declare කරලා තියෙන නිසා මෙතනට AI Route එක දාන්න පුළුවන්
+app.use("/api/ai", aiRoutes);
+
 app.use("/api", rootRouter);
 app.use(errorHandler);
 
