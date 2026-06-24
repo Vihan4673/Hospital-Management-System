@@ -28,7 +28,6 @@ const Sidebar: React.FC = () => {
     navigate(item.path);
   };
 
-  // ⚡ FIXED: Clinical Schedules ඉවත් කර ඉතිරි ඒවා පමණක් සකසන ලදී
   const sidebarItems: SidebarItem[] = [
     {
       id: "dashboard",

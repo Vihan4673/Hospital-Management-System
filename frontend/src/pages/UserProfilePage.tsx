@@ -12,7 +12,6 @@ const UserProfile = () => {
   const [user, setUser] = useState<UserData | null>(null);
   const [isEditing, setIsEditing] = useState(false);
 
-  // ⚡ FIX: Full Name එක පමණක් භාවිතා කිරීම
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -63,14 +62,12 @@ const UserProfile = () => {
     );
   }
 
-  // User Role එක ලස්සනට පෙන්වීමට (Capitalized)
   const displayRole = user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "Patient";
 
   return (
       <div className="min-h-screen bg-slate-50/50 py-12 px-4 flex justify-center items-start">
         <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl shadow-slate-200/50 overflow-hidden border border-slate-100">
 
-          {/* Header Section - Modern Gradient Line */}
           <div className="relative bg-gradient-to-r from-blue-700 to-blue-600 p-8 text-white flex flex-col sm:flex-row justify-between items-center gap-6">
             <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:24px_24px]"></div>
 
@@ -143,7 +140,6 @@ const UserProfile = () => {
           </div>
         </div>
 
-        {/* Edit Modal (Sleek Popup) */}
         {isEditing && (
             <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex justify-center items-center z-50 p-4 animate-fade-in">
               <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl border border-slate-100 relative transform transition-all">
