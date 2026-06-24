@@ -46,7 +46,7 @@ export const createAppointment = async (req: Request, res: Response, next: NextF
       doctor: foundDoctor._id,
       patient: new mongoose.Types.ObjectId(patient),
       appointmentDate: appointmentDate,
-      tokenNumber: nextTokenNumber, // ⚡ Token එක save කිරීම
+      tokenNumber: nextTokenNumber,
       roomNumber: roomNumber || foundDoctor.roomNumber || "Room A",
       doctorFee: doctorFee !== undefined ? Number(doctorFee) : (foundDoctor.doctorFee || foundDoctor.fee || 0),
       status: "pending"
@@ -123,50 +123,65 @@ export const createAppointment = async (req: Request, res: Response, next: NextF
   }
 };
 
+// ⚡ 2️⃣ COMPLETE APPOINTMENT (ROBUST FIX)
 export const completeAppointment = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    // Frontend එකෙන් එවන id එක req.params.id එකෙන් ගන්නවා
     const { id } = req.params;
 
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-      return next(new APIError(400, "Invalid Appointment ID format"));
+      return next(new APIError(400, `Invalid Appointment ID format: ${id}`));
     }
 
-    const appointment = await AppointmentModel.findById(id);
-    if (!appointment) {
-      return next(new APIError(404, "Appointment record not found"));
+    // ⚡ .save() එකේදී schema hooks crash වෙන එක වළක්වන්න findOneAndUpdate භාවිතා කිරීම වඩාත් ආරක්ෂිතයි
+    const updatedAppointment = await AppointmentModel.findOneAndUpdate(
+        { _id: id },
+        { $set: { status: "completed" } },
+        { new: true } // update වුණු අලුත් object එක return කරන්න
+    );
+
+    if (!updatedAppointment) {
+      return next(new APIError(404, "Appointment record not found in system"));
     }
 
-    appointment.status = "completed";
-    await appointment.save();
-
-    res.status(200).json({ message: "Appointment marked as completed successfully", appointment });
+    res.status(200).json({
+      message: "Appointment marked as completed successfully",
+      appointment: updatedAppointment
+    });
   } catch (err: any) {
     console.error("🔥 ACTUAL BACKEND ERROR (Complete):", err);
     next(new APIError(500, "Error completing appointment", err.message));
   }
 };
 
+// ⚡ 3️⃣ CANCEL APPOINTMENT (ROBUST FIX)
 export const cancelAppointment = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
 
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-      return next(new APIError(400, "Invalid Appointment ID format"));
+      return next(new APIError(400, `Invalid Appointment ID format: ${id}`));
     }
 
-    const appointment = await AppointmentModel.findById(id);
-    if (!appointment) {
-      return next(new APIError(404, "Appointment record not found"));
-    }
+    const updatedAppointment = await AppointmentModel.findOneAndUpdate(
+        { _id: id, status: { $ne: "cancelled" } }, // කලින් cancel වෙලා නැත්නම් විතරක් කරන්න
+        { $set: { status: "cancelled" } },
+        { new: true }
+    );
 
-    if (appointment.status === "cancelled") {
+    if (!updatedAppointment) {
+      // එක්කෝ record එක නැහැ, නැත්නම් ඒක දැනටමත් cancel කරලා තියෙන්නේ
+      const checkExist = await AppointmentModel.findById(id);
+      if (!checkExist) {
+        return next(new APIError(404, "Appointment record not found"));
+      }
       return next(new APIError(400, "Appointment has already been cancelled"));
     }
 
-    appointment.status = "cancelled";
-    await appointment.save();
-
-    res.status(200).json({ message: "Appointment cancelled successfully", appointment });
+    res.status(200).json({
+      message: "Appointment cancelled successfully",
+      appointment: updatedAppointment
+    });
   } catch (err: any) {
     console.error("🔥 ACTUAL BACKEND ERROR (Cancel):", err);
     next(new APIError(500, "Error cancelling appointment", err.message));

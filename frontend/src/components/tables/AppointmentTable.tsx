@@ -13,8 +13,8 @@ const AppointmentTable: React.FC<AppointmentTableProps> = ({
                                                                onComplete,
                                                            }) => {
     return (
-        <div className="w-full overflow-x-auto">
-            <table className="w-full border-collapse text-sm bg-white">
+        <div className="w-full max-h-[500px] overflow-y-auto overflow-x-auto border border-slate-200 rounded-lg shadow-sm">
+            <table className="w-full border-collapse text-sm bg-white table-auto">
                 <thead className="bg-slate-100 text-slate-800 font-semibold border-b sticky top-0 z-10 shadow-sm">
                 <tr>
                     <th className="p-3 text-center border-b">Patient Name</th>
@@ -39,7 +39,6 @@ const AppointmentTable: React.FC<AppointmentTableProps> = ({
                         const term = search.toLowerCase().trim();
                         if (term === "") return true;
 
-                        // ⚡ Appointment Type එක නිවැරදි නිසා දැන් ඍජුවම (.name) ලබාගත හැක
                         const patientName = appointment.patient?.name?.toLowerCase() || "";
                         const doctorName = appointment.doctor?.name?.toLowerCase() || "";
                         const appointmentId = appointment._id?.toLowerCase() || "";
@@ -49,22 +48,17 @@ const AppointmentTable: React.FC<AppointmentTableProps> = ({
                     .map((appointment: Appointment) => {
                         return (
                             <tr key={appointment._id} className="border-t hover:bg-slate-50/60 transition-colors">
-                                {/* Patient Name */}
                                 <td className="p-3 text-center text-slate-800 font-medium">
                                     {appointment.patient?.name || "Unknown Patient"}
                                 </td>
-
-                                {/* Doctor Name */}
                                 <td className="p-3 text-center text-blue-700 font-medium">
                                     {appointment.doctor?.name ? `Dr. ${appointment.doctor.name}` : "Unknown Doctor"}
                                 </td>
 
-                                {/* Assigned Room */}
                                 <td className="p-3 text-center text-slate-700 font-semibold">
                                     {appointment.roomNumber || appointment.doctor?.roomNumber || "N/A"}
                                 </td>
 
-                                {/* Appointment Date and Time */}
                                 <td className="p-3 text-center text-slate-600">
                                     {appointment.appointmentDate
                                         ? new Date(appointment.appointmentDate).toLocaleString([], { hour: '2-digit', minute: '2-digit', year: 'numeric', month: 'numeric', day: 'numeric' })
@@ -72,18 +66,16 @@ const AppointmentTable: React.FC<AppointmentTableProps> = ({
                                     }
                                 </td>
 
-                                {/* Status Badge */}
                                 <td className="p-3 text-center">
                                     <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 uppercase tracking-wider">
                                       {appointment.status || "Waiting"}
                                     </span>
                                 </td>
 
-                                {/* Actions */}
                                 <td className="p-3 text-center">
                                     <button
                                         onClick={() => onComplete(appointment._id)}
-                                        className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-1.5 rounded-md text-xs font-semibold shadow-sm transition active:scale-95"
+                                        className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-1.5 rounded-md text-xs font-semibold shadow-sm transition active:scale-95 cursor-pointer"
                                     >
                                         Complete
                                     </button>

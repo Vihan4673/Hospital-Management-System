@@ -195,7 +195,6 @@ const AppointmentPage: React.FC = () => {
                 ? `${formatTime(foundSlot.doctor.startTime)} - ${formatTime(foundSlot.doctor.endTime)}`
                 : "Not Set";
 
-            // ⚡ FIX: 'Doctor' type එකේ channellingPrice field එක තියෙන නිසා (as any) යොදා TypeScript error එක මඟහැරුවා
             const docData = foundSlot.doctor as any;
 
             setDoctorDetails({
@@ -219,7 +218,6 @@ const AppointmentPage: React.FC = () => {
         }
         setLoading(true);
         try {
-            // ⚡ FIX: createAppointment එකට 5 වෙනි argument එක ලෙස doctorDetails.doctorFee pass කළා
             await createAppointment(
                 targetDoctorId,
                 patientDetails._id,
@@ -266,22 +264,22 @@ const AppointmentPage: React.FC = () => {
     };
 
     return (
-        <div className="w-full max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 text-slate-800 antialiased selection:bg-blue-500 selection:text-white">
+        <div className="w-full max-w-7xl mx-auto px-2 py-4 sm:px-6 lg:px-8 text-slate-800 antialiased selection:bg-blue-500 selection:text-white">
 
             {/* Header section */}
-            <div className="flex flex-col items-center justify-center mb-8 text-center">
+            <div className="flex flex-col items-center justify-center mb-6 text-center">
                 <div className="p-3 bg-blue-50 rounded-2xl text-blue-600 mb-3 shadow-sm border border-blue-100">
-                    <CalendarCheck className="w-8 h-8" />
+                    <CalendarCheck className="w-7 h-7 sm:w-8 sm:h-8" />
                 </div>
                 <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-wide text-slate-900 uppercase">
                     Appointment Management
                 </h1>
-                <p className="text-sm text-slate-500 mt-1">Manage and channel patients with real-time doctor availability</p>
+                <p className="text-xs sm:text-sm text-slate-500 mt-1">Manage and channel patients with real-time doctor availability</p>
             </div>
 
             {/* Actions Bar */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 mb-6">
-                <div className="relative flex-1 max-w-xl">
+            <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 mb-6">
+                <div className="relative flex-1">
                     <input
                         id="search"
                         type="text"
@@ -306,13 +304,13 @@ const AppointmentPage: React.FC = () => {
 
             {/* Appointment Form */}
             {showAppointmentForm && (
-                <div className="bg-white border border-slate-100 rounded-2xl shadow-md p-5 md:p-6 space-y-6 mb-8 transition-all duration-300 ease-in-out">
+                <div className="bg-white border border-slate-100 rounded-2xl shadow-md p-4 sm:p-6 space-y-6 mb-8 transition-all duration-300 ease-in-out">
 
                     {/* Patient Details Section */}
                     <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100">
                         <div className="flex items-center gap-2 mb-4 text-blue-900">
                             <User className="w-4 h-4 text-blue-600" />
-                            <h2 className="text-sm font-bold tracking-wide uppercase">Patient Details</h2>
+                            <h2 className="text-xs sm:text-sm font-bold tracking-wide uppercase">Patient Details</h2>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                             <div>
@@ -373,11 +371,11 @@ const AppointmentPage: React.FC = () => {
                     <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100">
                         <div className="flex items-center gap-2 mb-4 text-blue-900">
                             <Stethoscope className="w-4 h-4 text-blue-600" />
-                            <h2 className="text-sm font-bold tracking-wide uppercase">Doctor & Schedule Details</h2>
+                            <h2 className="text-xs sm:text-sm font-bold tracking-wide uppercase">Doctor & Schedule Details</h2>
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
 
-                            {/* 1. SELECT SPECIALTY */}
+                            {/*  SELECT SPECIALTY */}
                             <div>
                                 <label className="block mb-1.5 text-xs font-semibold text-slate-600">Select Specialty</label>
                                 <select
@@ -392,7 +390,7 @@ const AppointmentPage: React.FC = () => {
                                 </select>
                             </div>
 
-                            {/* 2. SELECT DATE */}
+                            {/*  SELECT DATE */}
                             <div>
                                 <label className="block mb-1.5 text-xs font-semibold text-slate-600">Select Available Date</label>
                                 <select
@@ -417,7 +415,7 @@ const AppointmentPage: React.FC = () => {
                                 </select>
                             </div>
 
-                            {/* 3. ASSIGNED DOCTOR (AUTO-FILLED) */}
+                            {/* ASSIGNED DOCTOR  */}
                             <div>
                                 <label className="block mb-1.5 text-xs font-semibold text-slate-600">Assigned Doctor</label>
                                 <input
@@ -429,7 +427,7 @@ const AppointmentPage: React.FC = () => {
                                 />
                             </div>
 
-                            {/* 4. CLINIC TIME (AUTO-FILLED) */}
+                            {/* CLINIC TIME  */}
                             <div>
                                 <label className="block mb-1.5 text-xs font-semibold text-slate-600">Available Time</label>
                                 <input
@@ -441,7 +439,7 @@ const AppointmentPage: React.FC = () => {
                                 />
                             </div>
 
-                            {/* 5. ASSIGNED ROOM (AUTO-FILLED) */}
+                            {/* ASSIGNED ROOM */}
                             <div>
                                 <label className="block mb-1.5 text-xs font-semibold text-slate-600">Assigned Room</label>
                                 <input
@@ -453,8 +451,8 @@ const AppointmentPage: React.FC = () => {
                                 />
                             </div>
 
-                            {/* 6. DOCTOR FEE (AUTO-FILLED) */}
-                            <div className="sm:col-span-2 lg:col-span-1">
+                            {/* DOCTOR FEE*/}
+                            <div className="sm:col-span-2 lg:col-span-1 xl:col-span-1">
                                 <label className="block mb-1.5 text-xs font-semibold text-slate-600 flex items-center gap-1">
                                     <Banknote className="w-3.5 h-3.5 text-blue-600" /> Doctor Fee
                                 </label>
@@ -482,8 +480,8 @@ const AppointmentPage: React.FC = () => {
             )}
 
             {/* Table Header Wrapper */}
-            <div className="mt-4 mb-4 flex items-center justify-between">
-                <h2 className="text-lg font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
+            <div className="mt-6 mb-4 flex items-center justify-between px-1">
+                <h2 className="text-base sm:text-lg font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
                     <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
                     Active Appointment Queue
                 </h2>
@@ -492,15 +490,12 @@ const AppointmentPage: React.FC = () => {
                 </span>
             </div>
 
-            {/* Table Responsive Wrapper */}
-            <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 shadow-sm bg-white scrollbar-thin scrollbar-thumb-slate-200">
-                <div className="min-w-[800px] md:min-w-full">
-                    <AppointmentTable
-                        activeAppointments={activeAppointments}
-                        search={search}
-                        onComplete={handleCompleteAppointment}
-                    />
-                </div>
+            <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100">
+                <AppointmentTable
+                    activeAppointments={activeAppointments}
+                    search={search}
+                    onComplete={handleCompleteAppointment}
+                />
             </div>
         </div>
     );
