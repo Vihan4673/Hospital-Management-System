@@ -25,25 +25,19 @@ interface ClinicSlot {
 const PatientAppointmentPage: React.FC = () => {
   const navigate = useNavigate();
 
-  // Database States
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [specialties, setSpecialties] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-
-  // Patient Input Fields
   const [patientName, setPatientName] = useState<string>("");
   const [patientPhone, setPatientPhone] = useState<string>("");
   const [patientEmail, setPatientEmail] = useState<string>("");
   const [patientAge, setPatientAge] = useState<string>("");
   const [patientGender, setPatientGender] = useState<string>("Male");
   const [patientAddress, setPatientAddress] = useState<string>("");
-
-  // Appointment Input Fields
   const [selectedSpecialty, setSelectedSpecialty] = useState<string>("");
   const [availableDates, setAvailableDates] = useState<ClinicSlot[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>("");
 
-  // Doctor Details State
   const [doctorDetails, setDoctorDetails] = useState({
     _id: "",
     name: "",
@@ -159,7 +153,6 @@ const PatientAppointmentPage: React.FC = () => {
           ? `${formatTime(foundSlot.doctor.startTime)} - ${formatTime(foundSlot.doctor.endTime)}`
           : "Not Set";
 
-      // ⚡ FIX: 'Doctor' type එකේ doctorFee නැති නිසා (as any) ලෙස cast කර TS Error TS2339 මඟහැරුවා
       const docData = foundSlot.doctor as any;
 
       setDoctorDetails({
@@ -208,7 +201,6 @@ const PatientAppointmentPage: React.FC = () => {
     }
 
     try {
-      // ⚡ FIX: email එක 'undefined' නොදී string එකක් දීමෙන් TS Error TS2345 නිවැරදි කළා
       const patientData = {
         name: patientName,
         phone: patientPhone,
@@ -270,7 +262,6 @@ const PatientAppointmentPage: React.FC = () => {
       <div className="h-screen bg-slate-100/60 overflow-y-auto py-6 sm:py-12 px-4 sm:px-6 lg:px-8 custom-scrollbar">
         <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 mb-12 overflow-hidden">
 
-          {/* Premium Header Banner & Home Navigation */}
           <div className="bg-[#1976D2] px-6 sm:px-10 py-6 sm:py-8 border-b border-blue-700/20 flex flex-col gap-4 sm:flex-row items-center justify-between">
             <div className="flex items-center gap-4 flex-col sm:flex-row text-center sm:text-left">
               <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-md hidden sm:block">
@@ -311,7 +302,7 @@ const PatientAppointmentPage: React.FC = () => {
                 </div>
             )}
 
-            {/* SECTION 1: PATIENT INFORMATION */}
+            {/*  PATIENT INFORMATION */}
             <div className="space-y-5">
               <h3 className="text-sm font-black text-blue-900 uppercase tracking-wider border-b border-slate-100 pb-3 flex items-center gap-2.5">
                 <User className="w-4 h-4 text-blue-600" /> 1. Patient Personal Information
@@ -356,7 +347,7 @@ const PatientAppointmentPage: React.FC = () => {
               </div>
             </div>
 
-            {/* SECTION 2: APPOINTMENT DETAILS */}
+            {/*  APPOINTMENT DETAILS */}
             <div className="space-y-5 pt-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
                 <h3 className="text-sm font-black text-blue-900 uppercase tracking-wider flex items-center gap-2.5">
@@ -443,7 +434,6 @@ const PatientAppointmentPage: React.FC = () => {
             </div>
           </form>
 
-          {/* Subtle Back Link */}
           <div className="p-6 bg-slate-50 text-center border-t border-slate-100">
             <button
                 type="button"
@@ -456,7 +446,6 @@ const PatientAppointmentPage: React.FC = () => {
           </div>
         </div>
 
-        {/* MODERN BLUR AI MODAL */}
         {isAiModalOpen && (
             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in">
               <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col border border-slate-100 animate-scale-up">

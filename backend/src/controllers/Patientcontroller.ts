@@ -1,42 +1,17 @@
 import { NextFunction, Request, Response } from 'express';
-import { PatientModel } from '../models/Patient';
 import mongoose from 'mongoose';
 import { APIError } from '../errors/APIError';
-
-const generatePatientId = async (): Promise<string> => {
-    try {
-        const lastPatient = await PatientModel.findOne().sort({ createdAt: -1 }).exec();
-
-        if (!lastPatient || !lastPatient.patientId) {
-            return 'PAT001';
-        }
-
-        const lastIdNumber = parseInt(lastPatient.patientId.substring(3));
-        const newIdNumber = isNaN(lastIdNumber) ? 1 : lastIdNumber + 1;
-        const padded = String(newIdNumber).padStart(3, '0');
-
-        return `PAT${padded}`;
-    } catch (err) {
-        return 'PAT001';
-    }
-};
+import {
+    createPatientService,
+    getPatientByIdService,
+    getAllPatientsService,
+    updatePatientService,
+    deletePatientService
+} from '../services/patientService';
 
 export const createPatient = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const patientId = await generatePatientId();
-        const { name, email, phone, age, gender, address } = req.body;
-
-        const newPatient = new PatientModel({
-            patientId,
-            name,
-            email,
-            phone,
-            age,
-            gender,
-            address
-        });
-
-        const savedPatient = await newPatient.save();
+        const savedPatient = await createPatientService(req.body);
         return res.status(201).json(savedPatient);
     } catch (error: any) {
         console.error("🔥 PATIENT CREATE ERROR:", error);
@@ -50,7 +25,7 @@ export const createPatient = async (req: Request, res: Response, next: NextFunct
 
 export const getPatientById = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const patient = await PatientModel.findOne({ patientId: req.params.id }).lean();
+        const patient = await getPatientByIdService(req.params.id);
         if (!patient) {
             return next(new APIError(404, "Patient not found"));
         }
@@ -62,7 +37,7 @@ export const getPatientById = async (req: Request, res: Response, next: NextFunc
 
 export const getAllPatients = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const patients = await PatientModel.find().lean();
+        const patients = await getAllPatientsService();
         res.status(200).json(patients);
     } catch (error: any) {
         console.error("GET ALL PATIENTS ERROR:", error);
@@ -72,11 +47,7 @@ export const getAllPatients = async (req: Request, res: Response, next: NextFunc
 
 export const updatePatient = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const updated = await PatientModel.findOneAndUpdate(
-            { patientId: req.params.id },
-            req.body,
-            { new: true, runValidators: true }
-        ).lean();
+        const updated = await updatePatientService(req.params.id, req.body);
 
         if (!updated) return next(new APIError(404, "Patient not found"));
         res.status(200).json(updated);
@@ -92,7 +63,7 @@ export const updatePatient = async (req: Request, res: Response, next: NextFunct
 
 export const deletePatient = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const deleted = await PatientModel.findOneAndDelete({ patientId: req.params.id });
+        const deleted = await deletePatientService(req.params.id);
         if (!deleted) return next(new APIError(404, "Patient not found"));
         res.status(200).json({ message: "Patient deleted successfully" });
     } catch (err: any) {

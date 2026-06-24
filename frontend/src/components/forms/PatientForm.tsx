@@ -33,7 +33,6 @@ const PatientForm: React.FC<PatientFormProps> = ({
   const [address, setAddress] = React.useState(patient?.address || "");
   const [errors, setErrors] = React.useState<FormErrors>({});
 
-  // 👈 FIX: වෙනත් පේෂන්ට් කෙනෙක් Edit කරන්න තෝරන විට Form එකේ Inputs වල අගයන් auto update වන කොටස
   useEffect(() => {
     setName(patient?.name || "");
     setEmail(patient?.email || "");
@@ -41,7 +40,7 @@ const PatientForm: React.FC<PatientFormProps> = ({
     setAge(patient?.age || "");
     setGender(patient?.gender || "Male");
     setAddress(patient?.address || "");
-    setErrors({}); // පරණ Errors තියෙනවා නම් ඒවාත් Clear කරයි
+    setErrors({});
   }, [patient]);
 
   const validateForm = (): boolean => {

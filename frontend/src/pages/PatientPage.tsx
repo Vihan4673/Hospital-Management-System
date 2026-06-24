@@ -126,7 +126,6 @@ const PatientsPage = () => {
     return (
         <div className="h-full px-1 py-2 bg-transparent text-slate-800 animate-fade-in">
 
-            {/* Title Block - Matching Medicare Theme Style */}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 border-b border-slate-200 pb-4 gap-4">
                 <div>
                     <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2 uppercase">
@@ -141,7 +140,6 @@ const PatientsPage = () => {
                 </div>
             </div>
 
-            {/* Search & Actions Row Controls */}
             <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center mb-6 gap-4 bg-white p-4 rounded-xl border border-slate-100 shadow-sm shadow-slate-100/50">
                 <div className="flex-1 relative">
                     <input
@@ -162,7 +160,6 @@ const PatientsPage = () => {
                 </button>
             </div>
 
-            {/* Patients Table Card Grid Wrapper */}
             <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden min-h-[400px]">
                 {isPatientLoading ? (
                     <div className="flex flex-col items-center justify-center h-96 text-slate-400 gap-2">
@@ -181,7 +178,6 @@ const PatientsPage = () => {
                 )}
             </div>
 
-            {/* Sleek Popup Form Modal */}
             {showPopup && (
                 <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex justify-center items-center z-[1000] p-4 transition-all">
                     <div className="animate-scale-in w-full max-w-2xl">
