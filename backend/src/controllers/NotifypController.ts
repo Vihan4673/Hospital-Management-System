@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import { AppointmentModel } from '../models/Appointment';
 import { sendEmail } from '../utils/sendEmail';
 import { APIError } from '../errors/APIError';
+import { getMissedAppointmentsService } from '../services/NotifypService'; // Path එක ඔයාගේ project එකට අනුව adjust කරගන්න
 
 // 1️⃣ NOTIFY PATIENTS ABOUT MISSED / PENDING APPOINTMENTS (With Token Support)
 export const notifyOverdueReaders = async (req: Request, res: Response, next: NextFunction) => {
@@ -9,10 +9,7 @@ export const notifyOverdueReaders = async (req: Request, res: Response, next: Ne
         const today = new Date();
 
         // status එක 'pending' වෙලා, හැබැයි appointment date එක අදට වඩා පරණ වෙච්ච ඒවා සෙවීම
-        const missedAppointments = await AppointmentModel.find({
-            appointmentDate: { $lt: today },
-            status: "pending"
-        }).populate('patient').populate('doctor').lean();
+        const missedAppointments = await getMissedAppointmentsService(today);
 
         // එකම patient ට appointments කිහිපයක් තිබුණොත් group කර ගැනීමට
         const grouped: Record<string, { patient: any; appointments: any[] }> = {};
