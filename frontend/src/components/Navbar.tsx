@@ -33,13 +33,11 @@ const Navbar = () => {
     }
 
     return (
-        // ✨ Glassmorphic Look: bg-white/75 + backdrop-blur-md
         <nav className='bg-white/75 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50 transition-all'>
             <div className='w-full mx-auto px-4 sm:px-8 lg:px-10'>
                 <div className='flex justify-between items-center h-16'>
 
                     {/* Logo & Medical Branding Section */}
-                    {/* ⚡ FIX: onClick සහ cursor-pointer ඉවත් කර ඇති බැවින් මෙතනින් කිසිදු ක්‍රියාවක් සිදු නොවේ */}
                     <div className='flex items-center'>
                         <div className='flex flex-shrink-0 gap-2 justify-center items-center select-none'>
                             <div className='bg-blue-600 p-2 rounded-lg text-white'>
@@ -52,7 +50,6 @@ const Navbar = () => {
                     </div>
 
                     {/* Desktop Navigation */}
-                    {/* ⚡ FIX: Login Button එක සම්පූර්ණයෙන්ම ඉවත් කර ඇත */}
                     <div className='hidden md:flex items-center space-x-4'>
                         {isLoggedIn && <UserDropdown />}
                     </div>
