@@ -1,19 +1,14 @@
 import { Request, Response, NextFunction } from "express";
-import { AppointmentModel } from "../models/Appointment";
 import { APIError } from "../errors/APIError";
 import { Patient } from "../models/Patient";
+import { getOverdueAppointmentsService } from "../services/OverdueApomentService"; // Path එක ඔයාගේ project එකට අනුව adjust කරගන්න
 
 export const getOverdueReaders = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const today = new Date();
     console.log(`today ${today}`);
 
-    const overdueAppointments = await AppointmentModel.find({
-      dueDate: { $lt: today },
-      status: { $ne: "Completed" },
-    })
-        .populate("doctor")
-        .populate("patient");
+    const overdueAppointments = await getOverdueAppointmentsService(today);
 
     console.log(`Overdue appointments count: ${overdueAppointments.length}`);
 
