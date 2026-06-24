@@ -25,12 +25,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setHeader(accessToken)
     }, [accessToken])
 
-    // ⚡ FIX: Page එක reload කරද්දී auto-login වීම සම්පූර්ණයෙන්ම ඉවත් කර ඇත.
     useEffect(() => {
-        // දැන් පිටුව refresh කරද්දී auto backend එකට කතා කරලා token refresh කරන්නේ නැත.
         setAccessToken("")
         setIsLoggedIn(false)
-        setIsAuthenticating(false) // Authentication check එක ඉවර බව දැනුම් දෙයි
+        setIsAuthenticating(false)
     }, [])
 
     return (

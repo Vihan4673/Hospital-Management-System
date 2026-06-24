@@ -1,22 +1,19 @@
 import { Request, Response, NextFunction } from "express"
-import { UserModel } from "../models/User"
-import { DoctorModel } from "../models/DoctorModel"
 import { APIError } from "../errors/APIError"
-import bcrypt from "bcrypt"
 import jwt, { JsonWebTokenError, JwtPayload, TokenExpiredError } from "jsonwebtoken"
-
-const ACCESS_TOKEN_EXPIRATION = "15m"
-const REFRESH_TOKEN_EXPIRATION = "7d"
-
-const createAccessToken = (userId: string, role: string) => {
-    return jwt.sign({ userId, role },
-        process.env.ACCESS_TOKEN_SECRET!, { expiresIn: ACCESS_TOKEN_EXPIRATION })
-}
-
-const createRefreshToken = (userId: string, role: string) => {
-    return jwt.sign({ userId, role },
-        process.env.REFRESH_TOKEN_SECRET!, { expiresIn: REFRESH_TOKEN_EXPIRATION })
-}
+import {
+    createAccessToken,
+    createRefreshToken,
+    findOfficialDoctor,
+    findUserByDoctorId,
+    findUserByEmail,
+    hashPassword,
+    createUser,
+    getAllUsersService,
+    findUserByQuery,
+    comparePassword,
+    findUserById
+} from "../services/authService"; // Path එක ඔයාගේ project එකට අනුව adjust කරගන්න
 
 export const signup = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -34,34 +31,31 @@ export const signup = async (req: Request, res: Response, next: NextFunction) =>
 
             const formattedDoctorId = doctorId.toUpperCase();
 
-            const isOfficialDoctor = await DoctorModel.findOne({ doctorId: formattedDoctorId })
+            const isOfficialDoctor = await findOfficialDoctor(formattedDoctorId)
             if (!isOfficialDoctor) {
                 return next(new APIError(403, "Invalid Doctor ID. You are not authorized to register as a doctor."))
             }
 
-            const isAlreadyRegistered = await UserModel.findOne({ doctorId: formattedDoctorId })
+            const isAlreadyRegistered = await findUserByDoctorId(formattedDoctorId)
             if (isAlreadyRegistered) {
                 return next(new APIError(409, "An account has already been created for this Doctor ID."))
             }
         }
         else if (email) {
-            const existingUser = await UserModel.findOne({ email: email.toLowerCase() })
+            const existingUser = await findUserByEmail(email.toLowerCase())
             if (existingUser) {
                 return next(new APIError(409, "Email already in use"))
             }
         }
 
-        const saltRounds = 10
-        const hashedPassword = await bcrypt.hash(password, saltRounds)
+        const hashedPassword = await hashPassword(password)
 
-        const user = new UserModel({
+        const user = await createUser({
             name,
             password: hashedPassword,
             role: finalRole,
             ...(finalRole === "doctor" ? { doctorId: doctorId.toUpperCase() } : { email: email?.toLowerCase() })
         })
-
-        await user.save()
 
         const userResponse = {
             _id: user._id,
@@ -78,7 +72,7 @@ export const signup = async (req: Request, res: Response, next: NextFunction) =>
 
 export const getAllUsers = async (_req: Request, res: Response, next: NextFunction) => {
     try {
-        const users = await UserModel.find().select("-password")
+        const users = await getAllUsersService()
         res.status(200).json(users)
     } catch (err) {
         next(err)
@@ -99,7 +93,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
             query = { doctorId: email.toUpperCase() }
         }
 
-        const user = await UserModel.findOne(query)
+        const user = await findUserByQuery(query)
         if (!user) {
             return next(new APIError(401, "Invalid credentials"))
         }
@@ -109,7 +103,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
             assignedRole = "admin"
         }
 
-        const isMatch = await bcrypt.compare(password, user.password)
+        const isMatch = await comparePassword(password, user.password)
         if (!isMatch) {
             return next(new APIError(401, "Invalid credentials"))
         }
@@ -168,7 +162,7 @@ export const refreshToken = async (req: Request, res: Response, next: NextFuncti
                 const userId = decoded.userId as string
                 const userRole = (decoded.role as string) || "patient"
 
-                const user = await UserModel.findById(userId)
+                const user = await findUserById(userId)
 
                 if (!user) {
                     return next(new APIError(401, "User not found"))
