@@ -28,18 +28,15 @@ const Dashboard = () => {
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
 
-                // 💡 1. අද දිනට අදාළ Appointments Filter කිරීම
                 const todayApp = appointmentData.filter(a => {
-                    const appDate = a.date || a.appointmentDate; // Backend එකෙන් එන දිනය අනුව සකසා ගන්න
+                    const appDate = a.date || a.appointmentDate;
                     return appDate ? new Date(appDate).getTime() >= today.getTime() : false;
                 });
                 setTodayAppointments(todayApp);
 
-                // 💡 2. 'isCompleted' වෙනුවට 'status' පමණක් භාවිතයෙන් Completed Filter කිරීම
                 const todayDone = appointmentData.filter(a => a.status === 'completed');
                 setCompletedToday(todayDone);
 
-                // 💡 3. Pending Filter කිරීම
                 const pending = appointmentData.filter(a => a.status !== 'completed');
                 setPendingAppointments(pending);
             } catch (error) {
@@ -48,7 +45,7 @@ const Dashboard = () => {
         };
 
         fetchData();
-        const interval = setInterval(fetchData, 5000); // සෑම තත්පර 5කට වරක් auto-refresh වේ
+        const interval = setInterval(fetchData, 5000);
         return () => clearInterval(interval);
     }, []);
 
@@ -94,7 +91,6 @@ const Dashboard = () => {
                                         <p className="text-xs text-gray-500 font-medium">
                                             {appointment.appointmentDate ? new Date(appointment.appointmentDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "N/A"}
                                         </p>
-                                        {/* 💡 Badge එකත් status එකට ගැළපෙන්න update කරන ලදී */}
                                         <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${isDone ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
                                             {appointment.status}
                                         </span>
