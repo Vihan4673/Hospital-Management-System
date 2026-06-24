@@ -127,7 +127,7 @@ const DoctorsPage = () => {
   return (
       <div className="h-full px-1 py-2 bg-transparent text-slate-800 animate-fade-in">
 
-        {/* Title Block - Matching Dashboard style */}
+        {/* Title Block */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 border-b border-slate-200 pb-4 gap-4">
           <div>
             <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2 uppercase">
@@ -164,14 +164,14 @@ const DoctorsPage = () => {
         </div>
 
         {/* Doctors Table Card Container */}
-        <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden min-h-[400px]">
+        <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 min-h-[400px]">
           {isDoctorLoading ? (
               <div className="flex flex-col items-center justify-center h-96 text-slate-400 gap-2">
                 <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
                 <p className="text-sm font-medium mt-1">Loading system profiles...</p>
               </div>
           ) : (
-              <div className="overflow-x-auto">
+              <div>
                 <DoctorTable
                     doctors={doctors}
                     search={search}

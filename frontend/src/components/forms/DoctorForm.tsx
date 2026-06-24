@@ -3,7 +3,7 @@ import type { Doctor } from "../../types/Doctor.ts";
 
 interface DoctorFormProps {
   doctor?: Doctor | null;
-  existingDoctors: Doctor[]; // 💡 අනෙක් වෛද්‍යවරුන්ගේ ලැයිස්තුව (කාමර චෙක් කිරීමට අවශ්‍යයි)
+  existingDoctors: Doctor[];
   isEditing: boolean;
   isSaving: boolean;
   onSave: (doctor: Omit<Doctor, "createdAt" | "updatedAt">) => void;
@@ -16,7 +16,7 @@ interface DoctorFormData {
   email: string;
   phone: string;
   specialty: string;
-  roomNumber: string; // 💡 Room Number එක එකතු කළා
+  roomNumber: string;
   channellingPrice: number | string;
   availableDays: string[];
   startTime: string;
@@ -28,7 +28,7 @@ interface DoctorFormErrors {
   email?: string;
   phone?: string;
   specialty?: string;
-  roomNumber?: string; // 💡 Room Number Error එක
+  roomNumber?: string;
   channellingPrice?: string;
   availableDays?: string;
   time?: string;
@@ -58,7 +58,7 @@ const DoctorForm: React.FC<DoctorFormProps> = ({
     email: doctor?.email || "",
     phone: doctor?.phone || "",
     specialty: doctor?.specialty || "",
-    roomNumber: doctor?.roomNumber || "", // 💡 Initial value එක
+    roomNumber: doctor?.roomNumber || "",
     channellingPrice: doctor?.channellingPrice || "",
     availableDays: doctor?.availableDays || [],
     startTime: doctor?.startTime || "",
@@ -67,7 +67,6 @@ const DoctorForm: React.FC<DoctorFormProps> = ({
 
   const [errors, setErrors] = React.useState<DoctorFormErrors>({});
 
-  // 💡 වේලාවන් එකිනෙක ගැටෙනවාදැයි (Overlap) පරීක්ෂා කරන Function එක
   const isTimeOverlapping = (start1: string, end1: string, start2: string, end2: string) => {
     return start1 < end2 && start2 < end1;
   };
@@ -109,20 +108,13 @@ const DoctorForm: React.FC<DoctorFormProps> = ({
       newErrors.time = "Start Time must be earlier than End Time";
     }
 
-    // 💡 ─── ROOM AVAILABILITY & CONFLICT CHECK LOGIC ───
     if (formData.roomNumber.trim() && formData.startTime && formData.endTime && formData.availableDays.length > 0) {
 
       const hasConflict = existingDoctors.some((doc) => {
-        // Edit කරන වෙලාවට තමන්ගේම පැරණි රෙකෝඩ් එක මඟ හැරීමට (Skip current doctor)
         if (isEditing && doc._id === doctor?._id) return false;
 
-        // 1. එකම කාමරයද බලන්න
         const isSameRoom = doc.roomNumber?.toLowerCase().trim() === formData.roomNumber.toLowerCase().trim();
-
-        // 2. තෝරපු දවස් වලින් එක දවසක් හෝ සමානද බලන්න (Shared Days)
         const sharesDays = doc.availableDays.some((day) => formData.availableDays.includes(day));
-
-        // 3. වේලාවන් එකිනෙක ගැටෙනවාද බලන්න (Time Overlap)
         const sharesTime = isTimeOverlapping(formData.startTime, formData.endTime, doc.startTime, doc.endTime);
 
         return isSameRoom && sharesDays && sharesTime;
@@ -250,7 +242,6 @@ const DoctorForm: React.FC<DoctorFormProps> = ({
               {errors.specialty && <p className="text-red-500 text-xs mt-1">{errors.specialty}</p>}
             </div>
 
-            {/* 💡 ROOM NUMBER INPUT FIELD */}
             <div>
               <label className="block mb-1 font-medium">Assigned Room Number</label>
               <input
@@ -278,7 +269,6 @@ const DoctorForm: React.FC<DoctorFormProps> = ({
               {errors.channellingPrice && <p className="text-red-500 text-xs mt-1">{errors.channellingPrice}</p>}
             </div>
 
-            {/* Channelling Session Time */}
             <div className="bg-slate-50 border p-4 rounded-lg sm:col-span-2 grid grid-cols-2 gap-4">
               <div className="col-span-2 mb-1">
                 <label className="font-semibold text-blue-800">Channelling Session Time</label>

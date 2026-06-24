@@ -34,9 +34,7 @@ const AppointmentPage: React.FC = () => {
     const [availableDates, setAvailableDates] = useState<ClinicSlot[]>([]);
     const [selectedDate, setSelectedDate] = useState<string>("");
 
-    // ⚡ Logged in user state
     const [loggedInDoctor, setLoggedInDoctor] = useState<any>(null);
-    // ⚡ දොස්තර මහතා තෝරාගන්නා නිශ්චිත දිනය (Default: Today)
     const [doctorSelectedFilterDate, setDoctorSelectedFilterDate] = useState<string>(
         new Date().toLocaleDateString('sv-SE')
     );
@@ -120,7 +118,6 @@ const AppointmentPage: React.FC = () => {
         fetchActiveAppointments();
     }, []);
 
-    // ⚡ Doctor කෙනෙක් ලොග් වී සිටී නම් ඔටෝමැටිකව ඔහුගේ Specialty සහ Available Days සකස් කිරීම
     useEffect(() => {
         if (loggedInDoctor && doctors.length > 0) {
             const currentDocObj = doctors.find(
@@ -279,7 +276,8 @@ const AppointmentPage: React.FC = () => {
                 targetDoctorId,
                 patientDetails._id,
                 selectedDate,
-                doctorDetails.roomNumber
+                doctorDetails.roomNumber,
+                doctorDetails.timeSlot || ""
             );
 
             setPatientDetails({ _id: "", mobile: "", name: "", patientId: "" });
@@ -357,8 +355,8 @@ const AppointmentPage: React.FC = () => {
             );
         })
         .sort((a, b) => {
-            const tokenA = Number(a.tokenNumber) || 0;
-            const tokenB = Number(b.tokenNumber) || 0;
+            const tokenA = Number((a as any).tokenNumber) || 0;
+            const tokenB = Number((b as any).tokenNumber) || 0;
             return tokenA - tokenB;
         });
 
