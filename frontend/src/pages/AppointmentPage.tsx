@@ -59,7 +59,7 @@ const AppointmentPage: React.FC = () => {
             setDoctors(result);
 
             const uniqueSpecialties = Array.from(
-                new Set(result.map((doc) => doc.specialty?.trim()).filter(Boolean))
+                new Set(result.map((doc: Doctor) => doc.specialty?.trim()).filter(Boolean))
             );
             setSpecialties(uniqueSpecialties);
         } catch (error) {

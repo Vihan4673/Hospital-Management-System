@@ -4,14 +4,14 @@ import Loginpage from "./pages/Loginpage";
 import SignupPage from "./pages/SignupPage";
 import AdminRoutes from "./pages/AdminRoutes";
 import Dashboard from "./pages/Dashboard";
-import PatientPage from "./pages/PatientPage.tsx";
-import DoctorPage from "./pages/DoctorPage.tsx";
-import AppointmentPage from "./pages/AppointmentPage.tsx";
+import PatientPage from "./pages/PatientPage";
+import DoctorPage from "./pages/DoctorPage";
+import AppointmentPage from "./pages/AppointmentPage";
 import OverduePage from "./pages/OverduePage";
 import UserProfile from "./pages/UserProfilePage";
 import Homepage from "./pages/HomePage";
 import PatientAptmentPage from "./pages/PatientAptmentPage";
-import DoctorDashboard from "./pages/DoctorDashboardPage.tsx";
+import DoctorDashboard from "./pages/DoctorDashboardPage";
 
 const router = createBrowserRouter([
   {
