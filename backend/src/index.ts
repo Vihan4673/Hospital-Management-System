@@ -1,6 +1,5 @@
-import dns from "node:dns";
-dns.setServers(["8.8.8.8", "8.8.4.4"]);
-
+import dns from "node:dns"
+dns.setServers(["8.8.8.8", "8.8.4.4"])
 import express, { Request, Response } from "express";
 import { connectDB } from "./db/mongo";
 import dotenv from "dotenv";
@@ -13,50 +12,33 @@ import aiRoutes from "./routes/AiRoutes";
 dotenv.config();
 
 const app = express();
+
 const port = process.env.PORT || 5000;
 
-const allowedOrigins = [
-    "http://localhost:3000",
-    process.env.CLIENT_ORIGIN
-].filter(Boolean) as string[];
+const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:3000";
 
 const corsOptions = {
-    origin: function (origin: any, callback: any) {
-        // allow server-to-server or mobile apps (no origin)
-        if (!origin) return callback(null, true);
-
-        if (allowedOrigins.includes(origin)) {
-            return callback(null, true);
-        } else {
-            console.log("Blocked by CORS:", origin);
-            return callback(new Error("Not allowed by CORS"));
-        }
-    },
+    origin: CLIENT_ORIGIN,
     credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    allowedHeaders: ["Content-Type", "Authorization"]
 };
 
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
-
 app.use(cookieParser());
 app.use(express.json());
 
-// routes
 app.use("/api/ai", aiRoutes);
+
 app.use("/api", rootRouter);
-
-app.get("/", (req: Request, res: Response) => {
-    res.send("Backend is working 🚀");
-});
-
 app.use(errorHandler);
 
+app.get("/", (req: Request, res: Response) => {
+    res.send("Hello World!, Hi Backend is working!");
+});
 
 connectDB().then(() => {
     app.listen(port, () => {
-        console.log(`Backend Server running on port ${port}`);
-        console.log("Allowed Origins:", allowedOrigins);
+        console.log(`Backend Server listening on port ${port}`);
     });
 });
