@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import type { Patient } from "../../types/Patient.ts";
+import type { Patient } from "../../types/Patient";
 
 interface PatientFormProps {
   patient?: Patient | null;

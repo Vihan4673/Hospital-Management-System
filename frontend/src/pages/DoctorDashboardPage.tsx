@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { getAllDoctors } from "../services/DoctorService.ts";
-import { getAllPatients } from "../services/PatientService.ts";
+import { getAllDoctors } from "../services/DoctorService";
+import { getAllPatients } from "../services/PatientService";
 import {
     createAppointment,
     getActiveAppointments,
     completeAppointment,
-} from "../services/AppointmentService.ts";
-import type { Doctor } from "../types/Doctor.ts";
-import type { Patient } from "../types/Patient.ts";
+} from "../services/AppointmentService";
+import type { Doctor } from "../types/Doctor";
+import type { Patient } from "../types/Patient";
 import type { Appointment } from "../types/Appointment";
 import axios from "axios";
 import toast from "react-hot-toast";

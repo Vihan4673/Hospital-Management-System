@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import { Plus, Search, Users } from "lucide-react";
-import type { Patient } from "../types/Patient.ts";
-import PatientTable from "../components/tables/PatientTable.tsx";
-import PatientForm from "../components/forms/PatientForm.tsx";
+import type { Patient } from "../types/Patient";
+import PatientTable from "../components/tables/PatientTable";
+import PatientForm from "../components/forms/PatientForm";
 import {
     addPatient,
     deletePatient,
     getAllPatients,
     updatePatient,
-} from "../services/PatientService.ts";
+} from "../services/PatientService";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { useAuth } from "../context/useAuth";

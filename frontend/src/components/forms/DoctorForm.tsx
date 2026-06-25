@@ -1,5 +1,5 @@
 import React from "react";
-import type { Doctor } from "../../types/Doctor.ts";
+import type { Doctor } from "../../types/Doctor";
 
 interface DoctorFormProps {
   doctor?: Doctor | null;

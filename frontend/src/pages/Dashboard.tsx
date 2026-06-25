@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { getAllDoctors } from '../services/DoctorService.ts';
-import { getAllPatients } from '../services/PatientService.ts';
-import { getActiveAppointments } from '../services/AppointmentService.ts';
-import type { Doctor } from "../types/Doctor.ts";
-import type { Patient } from "../types/Patient.ts";
-import type { Appointment } from "../types/Appointment.ts";
+import { getAllDoctors } from '../services/DoctorService';
+import { getAllPatients } from '../services/PatientService';
+import { getActiveAppointments } from '../services/AppointmentService';
+import type { Doctor } from "../types/Doctor";
+import type { Patient } from "../types/Patient";
+import type { Appointment } from "../types/Appointment";
 
 const Dashboard = () => {
     const [doctors, setDoctors] = useState<Doctor[]>([]);

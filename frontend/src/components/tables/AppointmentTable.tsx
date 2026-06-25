@@ -1,5 +1,5 @@
 import React from "react";
-import type { Appointment } from "../../types/Appointment.ts";
+import type { Appointment } from "../../types/Appointment";
 
 interface AppointmentTableProps {
     activeAppointments: Appointment[];

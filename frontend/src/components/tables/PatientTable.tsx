@@ -1,5 +1,5 @@
 import React from "react";
-import type { Patient } from "../../types/Patient.ts";
+import type { Patient } from "../../types/Patient";
 
 interface PatientTableProps {
     patients: Patient[];

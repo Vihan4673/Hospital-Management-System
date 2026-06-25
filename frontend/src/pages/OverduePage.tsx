@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 
 import toast from "react-hot-toast";
 import { showConfirmation } from "../components/ConfirmationToast";
-import type { Doctor } from "../types/Doctor.ts";
-import type { Patient } from "../types/Patient.ts";
+import type { Doctor } from "../types/Doctor";
+import type { Patient } from "../types/Patient";
 import { getOverDues, notifyOverdue } from "../services/overdueService";
 import { Clock } from "lucide-react";
 
@@ -80,7 +80,6 @@ const OverduePage: React.FC = () => {
         overdues?.map((entry, idx) => (
           <div key={idx} className="mb-6 border rounded p-4">
             <h2 className="text-lg font-semibold mb-2">
-              {entry.reader.name} ({entry.reader.readerId}) - {entry.reader.phone}
             </h2>
             <table className="w-full border">
               <thead className="bg-gray-100">
@@ -93,7 +92,6 @@ const OverduePage: React.FC = () => {
               <tbody>
                 {entry.overdueBooks.map((book, i) => (
                   <tr key={i}>
-                    <td className="p-2 border">{book.book.title}</td>
                     <td className="p-2 border">{new Date(book.lentDate).toLocaleDateString()}</td>
                     <td className="p-2 border text-red-600 font-semibold">
                       {new Date(book.dueDate).toLocaleDateString()}
