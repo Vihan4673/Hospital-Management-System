@@ -1,4 +1,4 @@
-import type { Patient } from "../types/Patient.ts";
+import type { Patient } from "../types/Patient";
 import apiClient from "./apiClient";
 
 export const getAllPatients = async (): Promise<Patient[]> => {
