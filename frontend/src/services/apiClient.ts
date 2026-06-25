@@ -38,17 +38,20 @@ apiClient.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
 
-        // 1. 🚨 refresh-token URL එකෙන්ම 401 ආවොත්, කිසිම දෙයක් නොකර එතනින්ම Reject කරන්න (Loop block)
-        if (originalRequest.url?.includes("/auth/refresh-token")) {
-            return Promise.reject(error);
+        // 1. 🚨 LOGIN API එකෙන් හෝ REFRESH API එකෙන් 401 ආවොත් කිසිම විටක Refresh කරන්න යන්න එපා!
+        // කෙලින්ම Error එක Client (Login Component) එකට පාස් කරන්න.
+        if (
+            originalRequest.url?.includes("/auth/login") ||
+            originalRequest.url?.includes("/auth/refresh-token")
+        ) {
+            return Promise.reject(error); // 👈 මෙතනින් කෙලින්ම React UI එකට Error එක යනවා
         }
 
-        // 2. වෙනත් API එකකින් 401/403 ආවොත් පමණක් Token එක Refresh කරන්න ට්‍රයි කිරීම
+        // 2. වෙනත් සාමාන්‍ย API එකකින් (Dashboard, Patients වගේ) 401/403 ආවොත් පමණක් Token Refresh කරන්න
         if ((error.response?.status === 401 || error.response?.status === 403) && !originalRequest._retry) {
             originalRequest._retry = true;
 
             try {
-                // apiClient වෙනුවට සාමාන්‍ය axios එකෙන් රික්වෙස්ට් එක යැවීම
                 const res = await axios.post(`${BASE_URL}auth/refresh-token`, {}, { withCredentials: true });
                 const newAccessToken = res.data.accessToken;
 
@@ -58,12 +61,9 @@ apiClient.interceptors.response.use(
                 originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
                 return apiClient(originalRequest);
             } catch (refreshError) {
-                // 3. 🛡️ Refresh එක Fail වුණොත්, ඊළඟට එන හැම එකක්ම Block වෙන්න tokens ක්ලීන් කරන්න
-                localStorage.clear(); // Token ඔක්කොම අයින් කරනවා
-
-                // පිටුව මාරු වනතුරු ඉතිරි රික්වෙස්ට් ලූප් වීම වැලැක්වීමට බලෙන්ම පේජ් එක Reload කරනවා
+                // Refresh Token එකත් Expire වෙලා නම් ඔක්කොම ක්ලීන් කරලා මුල් පිටුවට දාන්න
+                localStorage.clear();
                 window.location.replace("/");
-
                 return Promise.reject(refreshError);
             }
         }
