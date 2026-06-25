@@ -8,7 +8,7 @@ import {
   deleteDoctor,
   getAllDoctors,
   updateDoctor,
-} from "../services/DoctorService";
+} from "../services/doctorService";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { useAuth } from "../context/useAuth";

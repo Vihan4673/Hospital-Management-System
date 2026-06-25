@@ -20,7 +20,6 @@ export const addDoctor = async (
     return response.data;
 };
 
-
 export const updateDoctor = async (
     id: string,
     doctorData: Omit<Doctor, "createdAt" | "updatedAt">

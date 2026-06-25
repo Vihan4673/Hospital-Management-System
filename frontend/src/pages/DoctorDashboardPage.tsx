@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { getAllDoctors } from "../services/DoctorService";
+import { getAllDoctors } from "../services/doctorService";
 import { getAllPatients } from "../services/PatientService";
 import {
     createAppointment,

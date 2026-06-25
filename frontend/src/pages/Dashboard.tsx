@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getAllDoctors } from '../services/DoctorService';
+import { getAllDoctors } from '../services/doctorService';
 import { getAllPatients } from '../services/PatientService';
 import { getActiveAppointments } from '../services/AppointmentService';
 import type { Doctor } from "../types/Doctor";

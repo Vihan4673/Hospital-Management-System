@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { getAllDoctors } from "../services/DoctorService";
+import { getAllDoctors } from "../services/doctorService";
 import { addPatient } from "../services/PatientService";
 import { createAppointment } from "../services/AppointmentService";
 import { getAiRecommendation } from "../services/AiService";
