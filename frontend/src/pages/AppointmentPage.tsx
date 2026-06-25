@@ -106,6 +106,7 @@ const AppointmentPage: React.FC = () => {
         fetchAllDoctors();
         fetchAllPatients();
         fetchActiveAppointments();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const generateSlotsForDoctor = (doctor: Doctor): ClinicSlot[] => {
@@ -291,7 +292,7 @@ const AppointmentPage: React.FC = () => {
                         type="text"
                         placeholder="Search by Patient Name, Doctor, or ID..."
                         className="border border-slate-200 pl-11 pr-4 py-2.5 rounded-xl w-full text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition bg-slate-50/50 hover:bg-slate-50 focus:bg-white"
-                        value={search} // නිවැරදි කිරීම: value එක search state එකට සම්බන්ධ කරන ලදී
+                        value={search}
                         onChange={(e) => setSearch(e.target.value)}
                     />
                     <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
@@ -382,7 +383,7 @@ const AppointmentPage: React.FC = () => {
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
 
-                            {/*  SELECT SPECIALTY */}
+                            {/* SELECT SPECIALTY */}
                             <div>
                                 <label className="block mb-1.5 text-xs font-semibold text-slate-600">Select Specialty</label>
                                 <select
@@ -397,7 +398,7 @@ const AppointmentPage: React.FC = () => {
                                 </select>
                             </div>
 
-                            {/*  SELECT DATE */}
+                            {/* SELECT DATE */}
                             <div>
                                 <label className="block mb-1.5 text-xs font-semibold text-slate-600">Select Available Date</label>
                                 <select
@@ -422,7 +423,7 @@ const AppointmentPage: React.FC = () => {
                                 </select>
                             </div>
 
-                            {/* ASSIGNED DOCTOR  */}
+                            {/* ASSIGNED DOCTOR */}
                             <div>
                                 <label className="block mb-1.5 text-xs font-semibold text-slate-600">Assigned Doctor</label>
                                 <input
@@ -434,7 +435,7 @@ const AppointmentPage: React.FC = () => {
                                 />
                             </div>
 
-                            {/* CLINIC TIME  */}
+                            {/* CLINIC TIME */}
                             <div>
                                 <label className="block mb-1.5 text-xs font-semibold text-slate-600">Available Time</label>
                                 <input
