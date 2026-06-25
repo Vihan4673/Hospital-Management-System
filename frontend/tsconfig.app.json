@@ -9,7 +9,6 @@
     "module": "ESNext",
     "skipLibCheck": true,
 
-    /* IMPORTANT FIX */
     "moduleResolution": "Node",
     "resolveJsonModule": true,
     "isolatedModules": true,
