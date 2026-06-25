@@ -43,6 +43,7 @@ const PatientsPage = () => {
         if (!isAuthenticating && isLoggedIn) {
             fetchAllPatients();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isAuthenticating, isLoggedIn]);
 
     const handleAddPatient = () => {
@@ -99,7 +100,7 @@ const PatientsPage = () => {
                 setPatients((prev) =>
                     prev.map((patient) =>
                         (patient.patientId === targetId || patient._id === targetId)
-                            ? updatedPatient
+                            ? (updatedPatient as Patient) // නිවැරදි කිරීම: Explicit Type Casting
                             : patient
                     )
                 );
@@ -107,7 +108,7 @@ const PatientsPage = () => {
             } else {
                 // Add new patient
                 const newPatient = await addPatient(patientData);
-                setPatients((prev) => [...prev, newPatient]);
+                setPatients((prev) => [...prev, newPatient as Patient]); // නිවැරදි කිරීම: Explicit Type Casting
                 toast.success("Patient saved successfully");
             }
             setShowPopup(false);
@@ -145,6 +146,7 @@ const PatientsPage = () => {
                     <input
                         id="search"
                         type="text"
+                        value={search} // නිවැරදි කිරීම: Controlled Input එකක් බවට පත් කිරීම
                         placeholder="Search by patient name, ID, age, phone or blood group..."
                         className="border border-slate-200 pl-10 pr-4 py-2.5 rounded-full w-full bg-slate-50/50 hover:border-blue-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all text-sm placeholder-slate-400"
                         onChange={(e) => setSearch(e.target.value)}

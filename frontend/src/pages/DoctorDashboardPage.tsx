@@ -51,7 +51,8 @@ const AppointmentPage: React.FC = () => {
         doctorId: "",
         name: "",
         roomNumber: "",
-        timeSlot: ""
+        timeSlot: "",
+        doctorFee: 0 // Doctor fee property එක එකතු කරන ලදී
     });
 
     const [showAppointmentForm, setShowAppointmentForm] = useState(false);
@@ -73,8 +74,9 @@ const AppointmentPage: React.FC = () => {
             const result = await getAllDoctors();
             setDoctors(result);
 
+            // TS2571 (unknown type) දෝෂය වැළැක්වීමට spec is string predicate එක භාවිත කර ඇත
             const uniqueSpecialties = Array.from(
-                new Set(result.map((doc) => doc.specialty?.trim()).filter(Boolean))
+                new Set(result.map((doc: Doctor) => doc.specialty?.trim()).filter((spec): spec is string => Boolean(spec)))
             );
             setSpecialties(uniqueSpecialties);
         } catch (error) {
@@ -138,6 +140,7 @@ const AppointmentPage: React.FC = () => {
                     if (!timeStr) return "";
                     const [hours, minutes] = timeStr.split(":");
                     const h = parseInt(hours, 10);
+                    if (isNaN(h)) return "";
                     const ampm = h >= 12 ? "PM" : "AM";
                     const formattedHours = h % 12 || 12;
                     return `${formattedHours}:${minutes} ${ampm}`;
@@ -147,12 +150,15 @@ const AppointmentPage: React.FC = () => {
                     ? `${formatTime(currentDocObj.startTime)} - ${formatTime(currentDocObj.endTime)}`
                     : "Not Set";
 
+                const docData = currentDocObj as any;
+
                 setDoctorDetails({
                     _id: currentDocObj._id || "",
                     doctorId: currentDocObj.doctorId || "",
                     name: currentDocObj.name,
                     roomNumber: currentDocObj.roomNumber || "Not Assigned",
-                    timeSlot: timeRange
+                    timeSlot: timeRange,
+                    doctorFee: docData.doctorFee || docData.fee || docData.channellingPrice || 0
                 });
             }
         }
@@ -160,12 +166,12 @@ const AppointmentPage: React.FC = () => {
 
     const generateSlotsForDoctor = (doctor: Doctor): ClinicSlot[] => {
         const slots: ClinicSlot[] = [];
-        const today = new Date();
         const lowerCaseDays = doctor.availableDays?.map(d => d.toLowerCase().trim()) || [];
 
         for (let i = 0; i < 14; i++) {
-            const futureDate = new Date(today);
-            futureDate.setDate(today.getDate() + i);
+            const futureDate = new Date();
+            // TS strict date mutation දෝෂ වැළැක්වීමට epoch timestamp offset භාවිතය
+            futureDate.setTime(Date.now() + i * 24 * 60 * 60 * 1000);
 
             const dayName = new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(futureDate);
 
@@ -191,7 +197,7 @@ const AppointmentPage: React.FC = () => {
 
         setSelectedSpecialty(specialty);
         setSelectedDate("");
-        setDoctorDetails({ _id: "", doctorId: "", name: "", roomNumber: "", timeSlot: "" });
+        setDoctorDetails({ _id: "", doctorId: "", name: "", roomNumber: "", timeSlot: "", doctorFee: 0 });
 
         if (!specialty) {
             setAvailableDates([]);
@@ -230,7 +236,7 @@ const AppointmentPage: React.FC = () => {
 
         if (!dateStr) {
             if (!loggedInDoctor) {
-                setDoctorDetails({ _id: "", doctorId: "", name: "", roomNumber: "", timeSlot: "" });
+                setDoctorDetails({ _id: "", doctorId: "", name: "", roomNumber: "", timeSlot: "", doctorFee: 0 });
             }
             return;
         }
@@ -239,6 +245,7 @@ const AppointmentPage: React.FC = () => {
             if (!timeStr) return "";
             const [hours, minutes] = timeStr.split(":");
             const h = parseInt(hours, 10);
+            if (isNaN(h)) return "";
             const ampm = h >= 12 ? "PM" : "AM";
             const formattedHours = h % 12 || 12;
             return `${formattedHours}:${minutes} ${ampm}`;
@@ -251,12 +258,15 @@ const AppointmentPage: React.FC = () => {
                     ? `${formatTime(foundSlot.doctor.startTime)} - ${formatTime(foundSlot.doctor.endTime)}`
                     : "Not Set";
 
+                const docData = foundSlot.doctor as any;
+
                 setDoctorDetails({
                     _id: foundSlot.doctor._id || "",
                     doctorId: foundSlot.doctor.doctorId || "",
                     name: foundSlot.doctor.name,
                     roomNumber: foundSlot.doctor.roomNumber || "Not Assigned",
-                    timeSlot: timeRange
+                    timeSlot: timeRange,
+                    doctorFee: docData.doctorFee || docData.fee || docData.channellingPrice || 0
                 });
                 toast.success(`Assigned: Dr. ${foundSlot.doctor.name}`);
             }
@@ -272,19 +282,20 @@ const AppointmentPage: React.FC = () => {
         }
         setLoading(true);
         try {
+            // Number(doctorDetails.timeSlot) වෙනුවට නිවැරදිව doctorDetails.doctorFee පරාමිතිය ලබා දෙන ලදී
             await createAppointment(
                 targetDoctorId,
                 patientDetails._id,
                 selectedDate,
                 doctorDetails.roomNumber,
-                Number(doctorDetails.timeSlot || "")
+                doctorDetails.doctorFee
             );
 
             setPatientDetails({ _id: "", mobile: "", name: "", patientId: "" });
             setSelectedDate("");
 
             if (!loggedInDoctor) {
-                setDoctorDetails({ _id: "", doctorId: "", name: "", roomNumber: "", timeSlot: "" });
+                setDoctorDetails({ _id: "", doctorId: "", name: "", roomNumber: "", timeSlot: "", doctorFee: 0 });
                 setSelectedSpecialty("");
                 setAvailableDates([]);
             }

@@ -58,8 +58,13 @@ const AppointmentPage: React.FC = () => {
             const result = await getAllDoctors();
             setDoctors(result);
 
+            // නිවැරදි කිරීම: Type Predicate එකක් (spec is string) යෙදීමෙන් unknown[] දෝෂය සම්පූර්ණයෙන් මඟහැර ඇත
             const uniqueSpecialties = Array.from(
-                new Set(result.map((doc: Doctor) => doc.specialty?.trim()).filter(Boolean))
+                new Set(
+                    result
+                        .map((doc: Doctor) => doc.specialty?.trim())
+                        .filter((spec): spec is string => Boolean(spec))
+                )
             );
             setSpecialties(uniqueSpecialties);
         } catch (error) {
@@ -186,6 +191,7 @@ const AppointmentPage: React.FC = () => {
                 if (!timeStr) return "";
                 const [hours, minutes] = timeStr.split(":");
                 const h = parseInt(hours, 10);
+                if (isNaN(h)) return "";
                 const ampm = h >= 12 ? "PM" : "AM";
                 const formattedHours = h % 12 || 12;
                 return `${formattedHours}:${minutes} ${ampm}`;
@@ -285,6 +291,7 @@ const AppointmentPage: React.FC = () => {
                         type="text"
                         placeholder="Search by Patient Name, Doctor, or ID..."
                         className="border border-slate-200 pl-11 pr-4 py-2.5 rounded-xl w-full text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition bg-slate-50/50 hover:bg-slate-50 focus:bg-white"
+                        value={search} // නිවැරදි කිරීම: value එක search state එකට සම්බන්ධ කරන ලදී
                         onChange={(e) => setSearch(e.target.value)}
                     />
                     <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />

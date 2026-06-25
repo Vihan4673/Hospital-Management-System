@@ -42,6 +42,7 @@ const DoctorsPage = () => {
     if (!isAuthenticating && isLoggedIn) {
       fetchAllDoctors();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticating, isLoggedIn]);
 
   const handleAddDoctor = () => {
@@ -91,7 +92,7 @@ const DoctorsPage = () => {
           const updatedDoctor = await updateDoctor(activeId, doctorData);
           setDoctors((prev) =>
               prev.map((doc) =>
-                  doc.doctorId === activeId || doc._id === activeId ? updatedDoctor : doc
+                  doc.doctorId === activeId || doc._id === activeId ? (updatedDoctor as Doctor) : doc
               )
           );
           toast.success("Doctor details updated successfully");
@@ -107,7 +108,7 @@ const DoctorsPage = () => {
       } else {
         try {
           const newDoctor = await addDoctor(doctorData);
-          setDoctors((prev) => [...prev, newDoctor]);
+          setDoctors((prev) => [...prev, newDoctor as Doctor]);
           toast.success("Doctor registered successfully");
           setShowPopup(false);
         } catch (error) {
@@ -148,6 +149,7 @@ const DoctorsPage = () => {
             <input
                 id="search"
                 type="text"
+                value={search} // නිවැරදි කිරීම: value එක search state එකට බැඳ තබන ලදී
                 placeholder="Search by name, specialization, or ID..."
                 className="border border-slate-200 pl-10 pr-4 py-2.5 rounded-full w-full bg-slate-50/50 hover:border-blue-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all text-sm placeholder-slate-400"
                 onChange={(e) => setSearch(e.target.value)}
