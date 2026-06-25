@@ -15,10 +15,26 @@ const app = express();
 
 const port = process.env.PORT || 5000;
 
-const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:3000";
-
 const corsOptions = {
-    origin: CLIENT_ORIGIN,
+    origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
+        const allowedOrigins = [
+            "http://localhost:3000",
+            "http://localhost:5173",
+            "https://hospital-three-theta-34.vercel.app"
+        ];
+
+        if (process.env.CLIENT_ORIGIN) {
+            allowedOrigins.push(process.env.CLIENT_ORIGIN);
+        }
+
+        const isVercelPreview = origin && /\.vercel\.app$/.test(origin);
+
+        if (!origin || allowedOrigins.indexOf(origin) !== -1 || isVercelPreview) {
+            callback(null, true);
+        } else {
+            callback(new Error("Not allowed by CORS"));
+        }
+    },
     credentials: true,
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
     allowedHeaders: ["Content-Type", "Authorization"]
@@ -29,7 +45,6 @@ app.use(cookieParser());
 app.use(express.json());
 
 app.use("/api/ai", aiRoutes);
-
 app.use("/api", rootRouter);
 app.use(errorHandler);
 
