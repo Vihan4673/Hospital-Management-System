@@ -50,13 +50,13 @@ const Dashboard = () => {
     }, []);
 
     return (
-        <div className="p-6 bg-slate-50 min-h-screen text-slate-800">
-            <h1 className="text-2xl font-bold mb-6 text-blue-900 flex items-center gap-2">
+        <div className="p-4 sm:p-6 bg-slate-50 min-h-screen text-slate-800">
+            <h1 className="text-xl sm:text-2xl font-bold mb-6 text-blue-900 flex items-center gap-2">
                 📊 Medicare Live Dashboard
             </h1>
 
-            {/* Hospital Statistics Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Hospital Statistics Grid - Responsive Columns */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
                 <StatCard title="👨‍⚕️ Total Doctors" value={doctors.length} color="bg-blue-100 text-blue-950 border border-blue-200" />
                 <StatCard title="👤 Total Patients" value={patients.length} color="bg-emerald-100 text-emerald-950 border border-emerald-200" />
                 <StatCard title="📅 Scheduled Today" value={todayAppointments.length} color="bg-amber-100 text-amber-950 border border-amber-200" />
@@ -66,11 +66,11 @@ const Dashboard = () => {
             </div>
 
             {/* Live Activity Log */}
-            <div className="mt-10">
-                <h2 className="text-xl font-semibold mb-4 text-slate-700">📌 Today's Appointment Queue</h2>
-                <div className="bg-white shadow-xs border border-slate-200 p-4 rounded-xl max-h-64 overflow-y-auto">
+            <div className="mt-8 sm:mt-10">
+                <h2 className="text-lg sm:text-xl font-semibold mb-4 text-slate-700">📌 Today's Appointment Queue</h2>
+                <div className="bg-white shadow-xs border border-slate-200 p-3 sm:p-4 rounded-xl max-h-96 overflow-y-auto">
                     {todayAppointments.length === 0 ? (
-                        <p className="text-gray-400 text-center py-4">No appointments scheduled for today.</p>
+                        <p className="text-gray-400 text-center py-6 text-sm">No appointments scheduled for today.</p>
                     ) : (
                         todayAppointments.map((appointment, index) => {
                             const patientName = (appointment.patient as Patient)?.name || "Unknown";
@@ -78,16 +78,16 @@ const Dashboard = () => {
                             const isDone = appointment.status === 'completed';
 
                             return (
-                                <div key={index} className="mb-3 p-3 bg-slate-50 rounded-lg border border-slate-100 flex justify-between items-center">
+                                <div key={index} className="mb-3 p-3 bg-slate-50 rounded-lg border border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
                                     <div>
-                                        <p className="font-medium text-slate-800">
+                                        <p className="font-medium text-sm sm:text-base text-slate-800">
                                             Patient: <span className="text-emerald-700">{patientName}</span>
                                         </p>
                                         <p className="text-xs text-slate-500 mt-0.5">
                                             Consulting: <span className="text-blue-600 font-medium">Dr. {doctorName}</span>
                                         </p>
                                     </div>
-                                    <div className="text-right">
+                                    <div className="text-left sm:text-right w-full sm:w-auto flex sm:flex-col justify-between sm:justify-center items-center sm:items-end gap-1">
                                         <p className="text-xs text-gray-500 font-medium">
                                             {appointment.appointmentDate ? new Date(appointment.appointmentDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "N/A"}
                                         </p>
@@ -114,9 +114,9 @@ const StatCard = ({
     value: number;
     color: string;
 }) => (
-    <div className={`p-6 rounded-xl shadow-xs transition-all hover:translate-y-[-2px] ${color}`}>
-        <p className="text-xs font-semibold uppercase tracking-wider opacity-75">{title}</p>
-        <h2 className="text-3xl font-extrabold mt-1">{value}</h2>
+    <div className={`p-4 sm:p-6 rounded-xl shadow-xs transition-all hover:translate-y-[-2px] ${color}`}>
+        <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider opacity-75">{title}</p>
+        <h2 className="text-2xl sm:text-3xl font-extrabold mt-1">{value}</h2>
     </div>
 );
 
