@@ -15,28 +15,10 @@ const app = express();
 
 const port = process.env.PORT || 5000;
 
-// 1. අවසර දිය යුතු URL සියල්ල Array එකක් ලෙස මෙතන දාන්න
-const allowedOrigins = [
-    "http://localhost:3000",
-    "https://hospital-three-theta-34.vercel.app",
-    "https://hospital-cvgzeugsl-vihan4673s-projects.vercel.app"
-];
-
-// Railway environment variable එකක් තිබ්බොත් ඒකත් එකතු කරගන්නවා
-if (process.env.CLIENT_ORIGIN) {
-    allowedOrigins.push(process.env.CLIENT_ORIGIN);
-}
+const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:3000";
 
 const corsOptions = {
-    // 2. එන request එකේ origin එක allowed list එකේ තියෙනවද බලන function එකක්
-    origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
-        // Postman හෝ mobile apps වලින් එන origin නැති requests allow කිරීමට (!origin)
-        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-            callback(null, true);
-        } else {
-            callback(new Error("Not allowed by CORS"));
-        }
-    },
+    origin: CLIENT_ORIGIN,
     credentials: true,
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
     allowedHeaders: ["Content-Type", "Authorization"]
