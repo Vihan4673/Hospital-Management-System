@@ -4,8 +4,7 @@ import { getAllDoctors } from "../services/DoctorService";
 import { addPatient } from "../services/PatientService";
 import { createAppointment } from "../services/AppointmentService";
 import { getAiRecommendation } from "../services/AiService";
-
-import type { Doctor } from "../types/Doctor.ts";
+import type { Doctor } from "../types/Doctor";
 import { CalendarCheck, User, Stethoscope, Sparkles, X, ChevronDown, CheckCircle2, ArrowLeft, Home } from "lucide-react";
 import toast from "react-hot-toast";
 

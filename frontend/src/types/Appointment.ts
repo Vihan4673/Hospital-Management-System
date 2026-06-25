@@ -1,5 +1,5 @@
-import type { Doctor } from "./Doctor.ts";
-import type { Patient } from "./Patient.ts";
+import type { Doctor } from "./Doctor";
+import type { Patient } from "./Patient";
 
 export type Appointment = {
   date: string;

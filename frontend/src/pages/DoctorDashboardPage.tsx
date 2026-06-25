@@ -22,6 +22,17 @@ interface ClinicSlot {
     doctor: Doctor;
 }
 
+// Global helper function to avoid code duplication and closure issues
+const formatTime = (timeStr?: string): string => {
+    if (!timeStr) return "";
+    const [hours, minutes] = timeStr.split(":");
+    const h = parseInt(hours, 10);
+    if (isNaN(h)) return "";
+    const ampm = h >= 12 ? "PM" : "AM";
+    const formattedHours = h % 12 || 12;
+    return `${formattedHours}:${minutes} ${ampm}`;
+};
+
 const AppointmentPage: React.FC = () => {
     const [doctors, setDoctors] = useState<Doctor[]>([]);
     const [patients, setPatients] = useState<Patient[]>([]);
@@ -76,7 +87,7 @@ const AppointmentPage: React.FC = () => {
             const uniqueSpecialties = Array.from(
                 new Set(result.map((doc) => doc.specialty?.trim()).filter(Boolean))
             );
-            setSpecialties(uniqueSpecialties);
+            setSpecialties(uniqueSpecialties as string[]);
         } catch (error) {
             if (axios.isAxiosError(error)) {
                 toast.error(error.message);
@@ -118,54 +129,16 @@ const AppointmentPage: React.FC = () => {
         fetchActiveAppointments();
     }, []);
 
-    useEffect(() => {
-        if (loggedInDoctor && doctors.length > 0) {
-            const currentDocObj = doctors.find(
-                (d) =>
-                    (d.doctorId && d.doctorId === loggedInDoctor.doctorId) ||
-                    (d._id && d._id === loggedInDoctor._id) ||
-                    (d._id && d._id === loggedInDoctor.id)
-            );
-
-            if (currentDocObj) {
-                if (currentDocObj.specialty) {
-                    setSelectedSpecialty(currentDocObj.specialty);
-                    const doctorSlots = generateSlotsForDoctor(currentDocObj);
-                    setAvailableDates(doctorSlots);
-                }
-
-                const formatTime = (timeStr?: string) => {
-                    if (!timeStr) return "";
-                    const [hours, minutes] = timeStr.split(":");
-                    const h = parseInt(hours, 10);
-                    const ampm = h >= 12 ? "PM" : "AM";
-                    const formattedHours = h % 12 || 12;
-                    return `${formattedHours}:${minutes} ${ampm}`;
-                };
-
-                const timeRange = currentDocObj.startTime && currentDocObj.endTime
-                    ? `${formatTime(currentDocObj.startTime)} - ${formatTime(currentDocObj.endTime)}`
-                    : "Not Set";
-
-                setDoctorDetails({
-                    _id: currentDocObj._id || "",
-                    doctorId: currentDocObj.doctorId || "",
-                    name: currentDocObj.name,
-                    roomNumber: currentDocObj.roomNumber || "Not Assigned",
-                    timeSlot: timeRange
-                });
-            }
-        }
-    }, [loggedInDoctor, doctors]);
-
+    // Generate Slots Function definition moved up to be accessible in useEffect
     const generateSlotsForDoctor = (doctor: Doctor): ClinicSlot[] => {
         const slots: ClinicSlot[] = [];
         const today = new Date();
         const lowerCaseDays = doctor.availableDays?.map(d => d.toLowerCase().trim()) || [];
 
         for (let i = 0; i < 14; i++) {
-            const futureDate = new Date(today);
-            futureDate.setDate(today.getDate() + i);
+            const futureDate = new Date();
+            // Explicitly ensuring number addition for TS type safety
+            futureDate.setDate(Number(today.getDate()) + Number(i));
 
             const dayName = new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(futureDate);
 
@@ -185,6 +158,37 @@ const AppointmentPage: React.FC = () => {
         }
         return slots;
     };
+
+    useEffect(() => {
+        if (loggedInDoctor && doctors.length > 0) {
+            const currentDocObj = doctors.find(
+                (d) =>
+                    (d.doctorId && d.doctorId === loggedInDoctor.doctorId) ||
+                    (d._id && d._id === loggedInDoctor._id) ||
+                    (d._id && d._id === loggedInDoctor.id)
+            );
+
+            if (currentDocObj) {
+                if (currentDocObj.specialty) {
+                    setSelectedSpecialty(currentDocObj.specialty);
+                    const doctorSlots = generateSlotsForDoctor(currentDocObj);
+                    setAvailableDates(doctorSlots);
+                }
+
+                const timeRange = currentDocObj.startTime && currentDocObj.endTime
+                    ? `${formatTime(currentDocObj.startTime)} - ${formatTime(currentDocObj.endTime)}`
+                    : "Not Set";
+
+                setDoctorDetails({
+                    _id: currentDocObj._id || "",
+                    doctorId: currentDocObj.doctorId || "",
+                    name: currentDocObj.name,
+                    roomNumber: currentDocObj.roomNumber || "Not Assigned",
+                    timeSlot: timeRange
+                });
+            }
+        }
+    }, [loggedInDoctor, doctors]);
 
     const handleSpecialtyChange = (specialty: string) => {
         if (loggedInDoctor) return;
@@ -234,15 +238,6 @@ const AppointmentPage: React.FC = () => {
             }
             return;
         }
-
-        const formatTime = (timeStr?: string) => {
-            if (!timeStr) return "";
-            const [hours, minutes] = timeStr.split(":");
-            const h = parseInt(hours, 10);
-            const ampm = h >= 12 ? "PM" : "AM";
-            const formattedHours = h % 12 || 12;
-            return `${formattedHours}:${minutes} ${ampm}`;
-        };
 
         if (!loggedInDoctor) {
             const foundSlot = availableDates.find(s => s.dateString === dateStr);
