@@ -1,6 +1,7 @@
 import dns from "node:dns"
 dns.setServers(["8.8.8.8", "8.8.4.4"])
 import express, { Request, Response } from "express";
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 import { connectDB } from "./db/mongo";
 import dotenv from "dotenv";
 import { errorHandler } from "./middleware/errorhandler";
