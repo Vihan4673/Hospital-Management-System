@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { sendEmail } from '../utils/sendEmail';
 import { APIError } from '../errors/APIError';
-import { getMissedAppointmentsService } from '../services/NotifypService'; // Path එක ඔයාගේ project එකට අනුව adjust කරගන්න
+import { getMissedAppointmentsService } from '../services/NotifypService';
 
 // 1️⃣ NOTIFY PATIENTS ABOUT MISSED / PENDING APPOINTMENTS (With Token Support)
 export const notifyOverdueReaders = async (req: Request, res: Response, next: NextFunction) => {
@@ -18,7 +18,8 @@ export const notifyOverdueReaders = async (req: Request, res: Response, next: Ne
             const patient = app.patient;
             const doctor = app.doctor;
 
-            if (!patient) return;
+            // ⚡ ආරක්ෂිත පියවරක්: patient හෝ patient._id නැත්නම් skip කරන්න
+            if (!patient || !patient._id) return;
 
             const patientId = patient._id.toString();
 
@@ -30,7 +31,7 @@ export const notifyOverdueReaders = async (req: Request, res: Response, next: Ne
                 doctorName: doctor?.name ? `Dr. ${doctor.name}` : 'General Doctor',
                 date: app.appointmentDate ? new Date(app.appointmentDate).toLocaleString() : today.toLocaleString(),
                 room: app.roomNumber || 'Room A',
-                tokenNumber: app.tokenNumber || 'N/A' // ⚡ FIX: Token Number එකත් group එකට එකතු කරගත්තා
+                tokenNumber: app.tokenNumber || 'N/A'
             });
         });
 
@@ -40,7 +41,6 @@ export const notifyOverdueReaders = async (req: Request, res: Response, next: Ne
 
             if (!patient || !patient.email) continue;
 
-            // ⚡ FIX: Email එක ඇතුළේ Token Number එක [Token #X] විදිහට ලස්සනට පෙන්වීම
             const appointmentList = appointments
                 .map(app => `
                     <li style="margin-bottom: 12px; line-height: 1.5;">
@@ -67,12 +67,18 @@ export const notifyOverdueReaders = async (req: Request, res: Response, next: Ne
                 </div>
             `;
 
-            sendEmail({
-                to: patient.email,
-                subject: '⚠️ Missed Appointment Alert',
-                text: `Dear ${patient.name || 'Patient'}, you have missed or pending appointments. Please contact hospital management.`,
-                html: message
-            }).catch(err => console.error(`❌ Missed app email failed for ${patient.email}:`, err));
+            // ⚡ FIX: 'await' එකතු කිරීම මඟින් Email එක සාර්ථකව යන තෙක් බලා සිටී
+            try {
+                await sendEmail({
+                    to: patient.email,
+                    subject: '⚠️ Missed Appointment Alert',
+                    text: `Dear ${patient.name || 'Patient'}, you have missed or pending appointments. Please contact hospital management.`,
+                    html: message
+                });
+            } catch (err) {
+                console.error(`❌ Missed app email failed for ${patient.email}:`, err);
+                // එක් අයෙකුගේ Email එකක් fail වුණත් අනෙක් අයට යැවීම නතර නොවේ
+            }
         }
 
         res.status(200).json({ message: 'Missed appointment email notifications processed successfully.' });
